@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout
@@ -44,50 +44,23 @@ jobs:
 
       - name: Build and push
         run: |
-          docker buildx build -f Dockerfile-dev --platform linux/amd64 \
+          docker buildx build -f Dockerfile-prod --platform linux/amd64 \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROD_DOCKERHUB_REPO }}:latest \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROD_DOCKERHUB_REPO }}:${{ env.VERSION }} \
             --push .
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          
-          echo "${{ secrets.PROD_BASTION_KEY }}" > ~/.ssh/bastion_key
-          chmod 600 ~/.ssh/bastion_key
-          
-          echo "${{ secrets.PROD_BATCH_EC2_KEY }}" > ~/.ssh/batch_key
-          chmod 600 ~/.ssh/batch_key
-          
-          cat >> ~/.ssh/config << 'EOF'
-          Host bastion
-            HostName ${{ secrets.PROD_BASTION_HOST }}
-            User ${{ secrets.PROD_BASTION_USER }}
-            IdentityFile ~/.ssh/bastion_key
-            StrictHostKeyChecking no
-          
-          Host batch-server
-            HostName ${{ secrets.PROD_BATCH_SERVER_IP }}
-            User ${{ secrets.PROD_BATCH_USER }}
-            IdentityFile ~/.ssh/batch_key
-            ProxyJump bastion
-            StrictHostKeyChecking no
-          EOF
-
       - name: Deploy to Batch server
         run: |
           echo "========================================="
           echo "🚀 Deploying to Prod Batch Server"
-          echo "Version: ${{ env.VERSION }}"
           echo "========================================="
           
-          ssh batch-server << 'ENDSSH'
-            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          ${{ secrets.PROD_BATCH_SSH_COMMAND }} << 'ENDSSH'
             cd ~
             ./deploy.sh
           ENDSSH
