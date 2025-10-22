@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout
@@ -51,43 +51,16 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          
-          echo "${{ secrets.DEV_BASTION_KEY }}" > ~/.ssh/bastion_key
-          chmod 600 ~/.ssh/bastion_key
-          
-          echo "${{ secrets.DEV_BATCH_EC2_KEY }}" > ~/.ssh/batch_key
-          chmod 600 ~/.ssh/batch_key
-          
-          cat >> ~/.ssh/config << 'EOF'
-          Host bastion
-            HostName ${{ secrets.DEV_BASTION_HOST }}
-            User ${{ secrets.DEV_BASTION_USER }}
-            IdentityFile ~/.ssh/bastion_key
-            StrictHostKeyChecking no
-          
-          Host batch-server
-            HostName ${{ secrets.DEV_BATCH_SERVER_IP }}
-            User ${{ secrets.DEV_BATCH_USER }}
-            IdentityFile ~/.ssh/batch_key
-            ProxyJump bastion
-            StrictHostKeyChecking no
-          EOF
-
       - name: Deploy to Batch server
         run: |
           echo "========================================="
           echo "🚀 Deploying to Dev Batch Server"
-          echo "Version: ${{ env.VERSION }}"
           echo "========================================="
           
-          ssh batch-server << 'ENDSSH'
-            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          ${{ secrets.DEV_BATCH_SSH_COMMAND }} << 'ENDSSH'
             cd ~
             ./deploy.sh
           ENDSSH
