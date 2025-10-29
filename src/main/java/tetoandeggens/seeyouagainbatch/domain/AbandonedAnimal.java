@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -37,6 +38,12 @@ public class AbandonedAnimal extends BaseEntity {
 
 	@Column(name = "happen_place")
 	private String happenPlace;
+
+	@Column(name = "city")
+	private String city;
+
+	@Column(name = "town")
+	private String town;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "species")
@@ -87,4 +94,36 @@ public class AbandonedAnimal extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "breed_type_id")
 	private BreedType breedType;
+
+	public AbandonedAnimal(Long id) {
+		this.id = id;
+	}
+
+	@Builder
+	public AbandonedAnimal(String city, String town, String birth, BreedType breedType, CenterLocation centerLocation,
+		String centerPhone,
+		String color, String desertionNo, LocalDateTime finalUpdatedAt, LocalDate happenDate, String happenPlace,
+		NeuteredState neuteredState, String noticeEndDate, String noticeNo, String noticeStartDate, String processState,
+		Sex sex, String specialMark, Species species, String weight) {
+		this.city = city;
+		this.town = town;
+		this.birth = birth;
+		this.breedType = breedType;
+		this.centerLocation = centerLocation;
+		this.centerPhone = centerPhone;
+		this.color = color;
+		this.desertionNo = desertionNo;
+		this.finalUpdatedAt = finalUpdatedAt;
+		this.happenDate = happenDate;
+		this.happenPlace = happenPlace;
+		this.neuteredState = neuteredState;
+		this.noticeEndDate = noticeEndDate;
+		this.noticeNo = noticeNo;
+		this.noticeStartDate = noticeStartDate;
+		this.processState = processState;
+		this.sex = sex;
+		this.specialMark = specialMark;
+		this.species = species;
+		this.weight = weight;
+	}
 }

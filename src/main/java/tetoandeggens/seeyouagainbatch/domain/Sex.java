@@ -12,4 +12,16 @@ public enum Sex {
 
 	private final String code;
 	private final String type;
+
+	public static Sex fromCode(String code) {
+		if (code == null) {
+			return Q;
+		}
+		for (Sex sex : values()) {
+			if (sex.code.equalsIgnoreCase(code)) {
+				return sex;
+			}
+		}
+		return Q;
+	}
 }
