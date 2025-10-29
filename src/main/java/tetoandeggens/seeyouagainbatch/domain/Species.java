@@ -12,4 +12,16 @@ public enum Species {
 
 	private final String code;
 	private final String type;
+
+	public static Species fromCode(String code) {
+		if (code == null) {
+			return ETC;
+		}
+		for (Species species : values()) {
+			if (species.code.equals(code)) {
+				return species;
+			}
+		}
+		return ETC;
+	}
 }

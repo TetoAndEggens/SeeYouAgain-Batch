@@ -12,4 +12,16 @@ public enum NeuteredState {
 
 	private final String code;
 	private final String type;
+
+	public static NeuteredState fromCode(String code) {
+		if (code == null) {
+			return U;
+		}
+		for (NeuteredState state : values()) {
+			if (state.code.equalsIgnoreCase(code)) {
+				return state;
+			}
+		}
+		return U;
+	}
 }
