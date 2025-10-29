@@ -20,13 +20,15 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-    basePackages = "tetoandeggens.seeyouagainbatch.domain",
+    basePackages = {
+        "tetoandeggens.seeyouagainbatch.domain",
+        "tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.repository"
+    },
     entityManagerFactoryRef = "businessEntityManagerFactory",
     transactionManagerRef = "businessTransactionManager"
 )
 public class DataSourceConfig {
 
-    @Primary
     @Bean(name = "businessDataSource")
     @ConfigurationProperties(prefix = "spring.datasource.business")
     public DataSource businessDataSource() {
@@ -35,6 +37,7 @@ public class DataSourceConfig {
             .build();
     }
 
+    @Primary
     @Bean(name = "batchDataSource")
     @ConfigurationProperties(prefix = "spring.datasource.batch")
     public DataSource batchDataSource() {
@@ -72,7 +75,6 @@ public class DataSourceConfig {
     }
 
 
-    @Primary
     @Bean(name = "businessNamedParameterJdbcTemplate")
     public NamedParameterJdbcTemplate businessNamedParameterJdbcTemplate(
         @Qualifier("businessDataSource") DataSource dataSource
