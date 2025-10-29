@@ -1,0 +1,85 @@
+package tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.client.PublicDataApiClient;
+import tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.dto.AbandonedAnimalApiResponseWrapper;
+import tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.dto.AbandonedAnimalPublicDataDto;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AbandonedAnimalPublicDataService {
+
+    private static final String RESPONSE_TYPE = "json";
+
+    private final PublicDataApiClient publicDataApiClient;
+
+    @Value("${public-data.api.service-key}")
+    private String serviceKey;
+
+    public List<AbandonedAnimalPublicDataDto> fetchAllData(String startDate, String endDate,
+                                                            int numOfRows, int startPageNo) {
+        log.info("공공 API 데이터 조회 시작 - startDate: {}, endDate: {}, numOfRows: {}, startPageNo: {}",
+                startDate, endDate, numOfRows, startPageNo);
+
+        List<AbandonedAnimalPublicDataDto> allData = new ArrayList<>();
+        int currentPage = startPageNo;
+
+        while (true) {
+            try {
+                log.info("페이지 {} 조회 중 (numOfRows: {})", currentPage, numOfRows);
+
+                AbandonedAnimalApiResponseWrapper response = publicDataApiClient.fetchAbandonedAnimals(
+                        serviceKey,
+                        startDate,
+                        endDate,
+                        numOfRows,
+                        RESPONSE_TYPE,
+                        currentPage
+                );
+
+                if (!isValidResponse(response)) {
+                    log.warn("페이지 {}에서 빈 응답 또는 null 응답 수신", currentPage);
+                    break;
+                }
+
+                List<AbandonedAnimalPublicDataDto> items = response.getResponse().getBody().getItems().getItem();
+
+                if (items.isEmpty()) {
+                    log.info("페이지 {}에 더 이상 데이터 없음", currentPage);
+                    break;
+                }
+
+                allData.addAll(items);
+                log.info("페이지 {}에서 {}건 조회 완료", currentPage, items.size());
+
+                if (items.size() < numOfRows) {
+                    log.info("마지막 페이지 도달. 조회 건수: {}", items.size());
+                    break;
+                }
+
+                currentPage++;
+            } catch (Exception e) {
+                log.error("페이지 {} 공공 API 데이터 조회 중 오류 발생", currentPage, e);
+                break;
+            }
+        }
+
+        log.info("공공 API 데이터 조회 완료. 총 {}건", allData.size());
+        return allData;
+    }
+
+    private boolean isValidResponse(AbandonedAnimalApiResponseWrapper response) {
+        return response != null
+                && response.getResponse() != null
+                && response.getResponse().getBody() != null
+                && response.getResponse().getBody().getItems() != null
+                && response.getResponse().getBody().getItems().getItem() != null;
+    }
+}
