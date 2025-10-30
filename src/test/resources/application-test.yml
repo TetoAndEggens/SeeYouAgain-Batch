@@ -34,3 +34,13 @@ spring:
   h2:
     console:
       enabled: true
+
+public-data:
+  api:
+    base-url: https://apis.data.go.kr
+    service-key: test-key
+
+kakao:
+  api:
+    base-url: https://dapi.kakao.com
+    key: test-key
