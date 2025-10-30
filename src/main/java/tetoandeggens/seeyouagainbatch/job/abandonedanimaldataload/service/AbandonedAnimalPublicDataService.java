@@ -51,6 +51,13 @@ public class AbandonedAnimalPublicDataService {
 
                 List<AbandonedAnimalPublicDataDto> items = response.getResponse().getBody().getItems().getItem();
 
+                log.info("페이지 {}에서 조회된 items 개수: {}", currentPage, items.size());
+                items.forEach(item -> log.info("desertionNo: {}, happenDt: {}, happenPlace: {}, kindFullNm: {}, upKindNm: {}, " +
+                        "age: {}, weight: {}, processState: {}, sexCd: {}, neuterYn: {}, careNm: {}, careTel: {}, careAddr: {}",
+                        item.getDesertionNo(), item.getHappenDt(), item.getHappenPlace(), item.getKindFullNm(), item.getUpKindNm(),
+                        item.getAge(), item.getWeight(), item.getProcessState(), item.getSexCd(), item.getNeuterYn(),
+                        item.getCareNm(), item.getCareTel(), item.getCareAddr()));
+
                 if (items.isEmpty()) {
                     log.info("페이지 {}에 더 이상 데이터 없음", currentPage);
                     break;
