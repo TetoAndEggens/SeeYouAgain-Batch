@@ -1,0 +1,45 @@
+spring:
+  batch:
+    job:
+      enabled: true
+    jdbc:
+      initialize-schema: always
+  main:
+    web-application-type: none
+  datasource:
+    business:
+      jdbc-url: jdbc:h2:mem:seeyouagain_business_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password:
+      driver-class-name: org.h2.Driver
+
+    batch:
+      jdbc-url: jdbc:h2:mem:seeyouagain_batch_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password:
+      driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+
+public-data:
+  api:
+    base-url: https://apis.data.go.kr
+    service-key: test
+
+kakao:
+  api:
+    base-url: https://dapi.kakao.com
+    key: test
+
+logging:
+  level:
+    org.springframework.batch: DEBUG
+    org.springframework.boot.autoconfigure.batch: DEBUG
