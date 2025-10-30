@@ -30,7 +30,7 @@ public class AbandonedAnimal extends BaseEntity {
 	@Column(name = "abandoned_animal_id")
 	private Long id;
 
-	@Column(name = "desertion_no", unique = true)
+	@Column(name = "desertion_no")
 	private String desertionNo;
 
 	@Column(name = "happen_date")
@@ -58,7 +58,7 @@ public class AbandonedAnimal extends BaseEntity {
 	@Column(name = "weight")
 	private String weight;
 
-	@Column(name = "notice_no", unique = true)
+	@Column(name = "notice_no")
 	private String noticeNo;
 
 	@Column(name = "notice_start_date")
