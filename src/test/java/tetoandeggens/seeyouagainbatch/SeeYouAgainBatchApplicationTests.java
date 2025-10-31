@@ -1,12 +1,12 @@
 package tetoandeggens.seeyouagainbatch;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-@SpringBootTest
-class SeeYouAgainBatchApplicationTests {
+import tetoandeggens.seeyouagainbatch.config.BatchIntegrationTest;
+import tetoandeggens.seeyouagainbatch.config.BatchTestConfig;
+
+@BatchIntegrationTest
+class SeeYouAgainBatchApplicationTests extends BatchTestConfig {
 
 	@Test
 	void contextLoads() {
