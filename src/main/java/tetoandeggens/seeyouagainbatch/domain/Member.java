@@ -45,12 +45,14 @@ public class Member extends BaseEntity {
 	@Column(name = "uuid", unique = true, nullable = false)
 	private String uuid;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "type")
-	private SocialType type;
+	@Column(name = "social_id_kakao", unique = true)
+	private String socialIdKakao;
 
-	@Column(name = "social_id")
-	private String socialId;
+	@Column(name = "social_id_naver", unique = true)
+	private String socialIdNaver;
+
+	@Column(name = "social_id_google", unique = true)
+	private String socialIdGoogle;
 
 	@Column(name = "violated_count", nullable = false)
 	private Long violatedCount = 0L;
