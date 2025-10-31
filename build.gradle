@@ -59,6 +59,11 @@ dependencies {
 
     // OpenFeign
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // Testcontainers
+    testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation 'org.testcontainers:mysql:1.20.4'
 }
 
 dependencyManagement {
