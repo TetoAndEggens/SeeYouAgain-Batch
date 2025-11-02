@@ -1,5 +1,7 @@
 package tetoandeggens.seeyouagainbatch.config;
 
+import java.net.http.HttpClient;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +30,10 @@ public class S3Config {
 			.region(Region.of(region))
 			.credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
 			.build();
+	}
+
+	@Bean
+	public HttpClient httpClient() {
+		return HttpClient.newBuilder().build();
 	}
 }
