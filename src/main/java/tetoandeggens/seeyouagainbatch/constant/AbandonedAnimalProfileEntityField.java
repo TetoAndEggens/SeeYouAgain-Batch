@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum AbandonedAnimalProfileEntityField {
 
 	PROFILE("profile"),
+	HAPPEN_DATE("happen_date"),
 	ABANDONED_ANIMAL_ID("abandoned_animal_id"),
 	CREATED_AT("created_at"),
 	UPDATED_AT("updated_at");
