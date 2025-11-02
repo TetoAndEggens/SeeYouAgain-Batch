@@ -7,12 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ImageType {
 
-	JPG("image/jpeg"),
-	JPEG("image/jpeg"),
-	PNG("image/png"),
-	WEBP("image/webp"),
-	HEIC("image/heic"),
-	SVG("image/svg+xml");
+    WEBP("image/webp");
 
-	private final String type;
+    private final String type;
 }
