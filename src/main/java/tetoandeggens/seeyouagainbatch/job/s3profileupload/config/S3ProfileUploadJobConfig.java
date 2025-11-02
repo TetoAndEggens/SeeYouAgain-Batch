@@ -26,7 +26,7 @@ import tetoandeggens.seeyouagainbatch.domain.QAbandonedAnimalProfile;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.parameter.S3ProfileUploadJobParameter;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.processor.S3ProfileUploadProcessor;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.validator.S3ProfileUploadJobParametersValidator;
-import tetoandeggens.seeyouagainbatch.job.s3profileupload.writer.S3UploadResultWriter;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.writer.S3ProfileUploadWriter;
 
 @Configuration
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class S3ProfileUploadJobConfig {
 	private final PlatformTransactionManager businessTransactionManager;
 	private final EntityManagerFactory entityManagerFactory;
 	private final S3ProfileUploadProcessor s3ProfileUploadProcessor;
-	private final S3UploadResultWriter s3UploadResultWriter;
+	private final S3ProfileUploadWriter s3ProfileUploadWriter;
 	private final S3ProfileUploadJobParametersValidator jobParametersValidator;
 	private final S3ProfileUploadJobParameter jobParameter;
 
@@ -57,7 +57,7 @@ public class S3ProfileUploadJobConfig {
 			.<AbandonedAnimalProfile, AbandonedAnimalS3Profile>chunk(CHUNK_SIZE, businessTransactionManager)
 			.reader(abandonedAnimalProfileReader())
 			.processor(s3ProfileUploadProcessor)
-			.writer(s3UploadResultWriter)
+			.writer(s3ProfileUploadWriter)
 			.build();
 	}
 
