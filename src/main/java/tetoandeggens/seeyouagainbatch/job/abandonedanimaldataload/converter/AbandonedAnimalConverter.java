@@ -57,14 +57,13 @@ public class AbandonedAnimalConverter {
 				continue;
 			}
 
-			AbandonedAnimalProfile profile = AbandonedAnimalProfile.builder()
-				.popfile1(profileUrls.size() > 0 ? profileUrls.get(0) : null)
-				.popfile2(profileUrls.size() > 1 ? profileUrls.get(1) : null)
-				.popfile3(profileUrls.size() > 2 ? profileUrls.get(2) : null)
-				.abandonedAnimal(new AbandonedAnimal(animalId))
-				.build();
-
-			profiles.add(profile);
+			for (String profileUrl : profileUrls) {
+				AbandonedAnimalProfile profile = AbandonedAnimalProfile.builder()
+					.profile(profileUrl)
+					.abandonedAnimal(new AbandonedAnimal(animalId))
+					.build();
+				profiles.add(profile);
+			}
 		}
 
 		return profiles;

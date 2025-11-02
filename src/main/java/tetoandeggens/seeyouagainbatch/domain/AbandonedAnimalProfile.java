@@ -25,24 +25,16 @@ public class AbandonedAnimalProfile extends BaseEntity {
 	@Column(name = "abandoned_animal_profile_id")
 	private Long id;
 
-	@Column(name = "popfile1")
-	private String popfile1;
-
-	@Column(name = "popfile2")
-	private String popfile2;
-
-	@Column(name = "popfile3")
-	private String popfile3;
+	@Column(name = "profile")
+	private String profile;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "abandoned_animal_id")
 	private AbandonedAnimal abandonedAnimal;
 
 	@Builder
-	public AbandonedAnimalProfile(String popfile1, String popfile2, String popfile3, AbandonedAnimal abandonedAnimal) {
-		this.popfile1 = popfile1;
-		this.popfile2 = popfile2;
-		this.popfile3 = popfile3;
+	public AbandonedAnimalProfile(String profile, AbandonedAnimal abandonedAnimal) {
+		this.profile = profile;
 		this.abandonedAnimal = abandonedAnimal;
 	}
 }
