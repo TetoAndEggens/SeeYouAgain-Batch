@@ -39,6 +39,13 @@ kakao:
     base-url: https://dapi.kakao.com
     key: test-key
 
+aws:
+  s3:
+    access-key: test-access-key
+    secret-key: test-secret-key
+    region: ap-northeast-2
+    bucket: test-bucket
+
 logging:
   level:
     org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: ERROR
