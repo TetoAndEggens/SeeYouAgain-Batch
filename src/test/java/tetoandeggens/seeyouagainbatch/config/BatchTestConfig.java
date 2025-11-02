@@ -1,5 +1,10 @@
 package tetoandeggens.seeyouagainbatch.config;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
@@ -12,6 +17,8 @@ public abstract class BatchTestConfig {
     private static final String MYSQL_CONTAINER_IMAGE = "mysql:8.0.26";
 
     protected static final MySQLContainer<?> MYSQL_CONTAINER;
+
+    protected NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     static {
         MYSQL_CONTAINER = new MySQLContainer<>(DockerImageName.parse(MYSQL_CONTAINER_IMAGE))
@@ -29,6 +36,11 @@ public abstract class BatchTestConfig {
         MYSQL_CONTAINER.start();
     }
 
+    @Autowired
+    public void setBusinessDataSource(@Qualifier("businessDataSource") DataSource dataSource) {
+        this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    }
+
     @DynamicPropertySource
     public static void setDatabaseProperties(DynamicPropertyRegistry registry) {
         String jdbcUrl = String.format(
@@ -39,5 +51,16 @@ public abstract class BatchTestConfig {
 
         registry.add("spring.datasource.business.jdbc-url", () -> jdbcUrl);
         registry.add("spring.datasource.batch.jdbc-url", () -> jdbcUrl);
+    }
+
+    protected void cleanupTestData() {
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 0");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_s3_profile");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_by_keyword");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_profile");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM center_location");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM breed_type");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 1");
     }
 }
