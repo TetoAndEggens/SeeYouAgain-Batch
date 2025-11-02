@@ -39,14 +39,15 @@ public class AbandonedAnimalProfileService {
 			return;
 		}
 
-		String insertSql = "INSERT INTO abandoned_animal_profile (profile, abandoned_animal_id, created_at, updated_at) " +
-			"VALUES (:profile, :abandoned_animal_id, NOW(), NOW())";
+		String insertSql = "INSERT INTO abandoned_animal_profile (profile, happen_date, abandoned_animal_id, created_at, updated_at) " +
+			"VALUES (:profile, :happen_date, :abandoned_animal_id, NOW(), NOW())";
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[profiles.size()];
 		for (int i = 0; i < profiles.size(); i++) {
 			AbandonedAnimalProfile profile = profiles.get(i);
 			batchParams[i] = new MapSqlParameterSource()
 				.addValue(AbandonedAnimalProfileEntityField.PROFILE.getColumnName(), profile.getProfile())
+				.addValue(AbandonedAnimalProfileEntityField.HAPPEN_DATE.getColumnName(), profile.getHappenDate())
 				.addValue(AbandonedAnimalProfileEntityField.ABANDONED_ANIMAL_ID.getColumnName(), profile.getAbandonedAnimal().getId());
 		}
 

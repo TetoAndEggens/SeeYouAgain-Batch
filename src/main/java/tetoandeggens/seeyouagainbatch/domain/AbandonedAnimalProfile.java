@@ -1,5 +1,7 @@
 package tetoandeggens.seeyouagainbatch.domain;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -28,13 +30,17 @@ public class AbandonedAnimalProfile extends BaseEntity {
 	@Column(name = "profile")
 	private String profile;
 
+	@Column(name = "happen_date")
+	private LocalDate happenDate;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "abandoned_animal_id")
 	private AbandonedAnimal abandonedAnimal;
 
 	@Builder
-	public AbandonedAnimalProfile(String profile, AbandonedAnimal abandonedAnimal) {
+	public AbandonedAnimalProfile(String profile, LocalDate happenDate, AbandonedAnimal abandonedAnimal) {
 		this.profile = profile;
+		this.happenDate = happenDate;
 		this.abandonedAnimal = abandonedAnimal;
 	}
 }

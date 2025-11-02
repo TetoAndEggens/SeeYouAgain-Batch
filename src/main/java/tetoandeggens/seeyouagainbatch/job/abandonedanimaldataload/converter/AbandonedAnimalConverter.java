@@ -57,9 +57,12 @@ public class AbandonedAnimalConverter {
 				continue;
 			}
 
+			LocalDateTime happenDateTime = parseDateTime(dto.getHappenDt());
+
 			for (String profileUrl : profileUrls) {
 				AbandonedAnimalProfile profile = AbandonedAnimalProfile.builder()
 					.profile(profileUrl)
+					.happenDate(happenDateTime.toLocalDate())
 					.abandonedAnimal(new AbandonedAnimal(animalId))
 					.build();
 				profiles.add(profile);
