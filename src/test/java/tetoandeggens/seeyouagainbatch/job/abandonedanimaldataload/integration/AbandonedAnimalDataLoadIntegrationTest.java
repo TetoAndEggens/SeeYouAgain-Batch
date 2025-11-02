@@ -6,8 +6,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,8 +18,6 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.JobRepositoryTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import tetoandeggens.seeyouagainbatch.config.BatchIntegrationTest;
@@ -51,13 +47,7 @@ class AbandonedAnimalDataLoadIntegrationTest extends BatchTestConfig {
 	@MockitoBean
 	private KakaoMapApiClient kakaoMapApiClient;
 
-	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 	private JobParameters jobParameters;
-
-	@Autowired
-	public void setBusinessDataSource(@Qualifier("businessDataSource") DataSource dataSource) {
-		this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
-	}
 
 	@BeforeEach
 	void setUp() {
@@ -88,7 +78,7 @@ class AbandonedAnimalDataLoadIntegrationTest extends BatchTestConfig {
 		assertThat(countCenterLocations()).isEqualTo(2);
 		assertThat(countBreedTypes()).isEqualTo(2);
 		assertThat(countAbandonedAnimals()).isEqualTo(2);
-		assertThat(countAbandonedAnimalProfiles()).isEqualTo(2);
+		assertThat(countAbandonedAnimalProfiles()).isEqualTo(6);
 
 		verify(publicDataApiClient, atLeastOnce()).fetchAbandonedAnimals(
 			anyString(), anyString(), anyString(), anyInt(), anyString(), anyInt());
@@ -184,16 +174,6 @@ class AbandonedAnimalDataLoadIntegrationTest extends BatchTestConfig {
 
 	private void cleanupJobExecutions() {
 		jobRepositoryTestUtils.removeJobExecutions();
-	}
-
-	private void cleanupTestData() {
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 0");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("TRUNCATE TABLE animal_by_keyword");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("TRUNCATE TABLE abandoned_animal_profile");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("TRUNCATE TABLE abandoned_animal");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("TRUNCATE TABLE center_location");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("TRUNCATE TABLE breed_type");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 1");
 	}
 
 	private int countCenterLocations() {
