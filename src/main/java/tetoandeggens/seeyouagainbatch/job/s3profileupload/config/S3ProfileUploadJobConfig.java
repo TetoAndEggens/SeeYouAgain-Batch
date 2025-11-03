@@ -1,7 +1,6 @@
 package tetoandeggens.seeyouagainbatch.job.s3profileupload.config;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.batch.core.Job;
@@ -68,8 +67,6 @@ public class S3ProfileUploadJobConfig {
 
 		LocalDate startDate = LocalDate.parse(jobParameter.getStartDate(), DATE_FORMATTER);
 		LocalDate endDate = LocalDate.parse(jobParameter.getEndDate(), DATE_FORMATTER);
-		LocalDateTime startDateTime = startDate.atStartOfDay();
-		LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
 		QuerydslNoOffsetNumberOptions<AbandonedAnimalProfile, Long> options =
 			QuerydslNoOffsetNumberOptions.of(profile.id, Expression.ASC);
@@ -80,7 +77,7 @@ public class S3ProfileUploadJobConfig {
 			.options(options)
 			.queryFunction(queryFactory -> queryFactory
 				.selectFrom(profile)
-				.where(profile.createdAt.between(startDateTime, endDateTime))
+				.where(profile.happenDate.between(startDate, endDate))
 			)
 			.build();
 	}
