@@ -207,13 +207,13 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 
 	private void insertLargeTestProfiles(int count) {
 		StringBuilder sql = new StringBuilder(
-			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, abandoned_animal_id, created_at, updated_at) VALUES ");
+			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, happen_date, abandoned_animal_id, created_at, updated_at) VALUES ");
 
 		for (int i = 1; i <= count; i++) {
 			if (i > 1) {
 				sql.append(",");
 			}
-			sql.append(String.format("(%d, 'http://example.com/profile-%d.jpg', %d, '2025-01-01 10:00:00', '2025-01-01 10:00:00')", i, i, i));
+			sql.append(String.format("(%d, 'http://example.com/profile-%d.jpg', '2025-01-01', %d, '2025-01-01 10:00:00', '2025-01-01 10:00:00')", i, i, i));
 		}
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(sql.toString());
@@ -245,10 +245,10 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 				"'2025-01-03', '2025-01-17', '보호중', 'M', 'Y', '조용함', 'DOG', 1, 1, NOW(), NOW())");
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
-			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, abandoned_animal_id, created_at, updated_at) VALUES " +
-				"(1, 'http://example.com/profile1.jpg', 1, '2025-01-01 10:00:00', '2025-01-01 10:00:00'), " +
-				"(2, 'http://example.com/profile2.jpg', 2, '2025-01-02 10:00:00', '2025-01-02 10:00:00'), " +
-				"(3, 'http://example.com/profile3.jpg', 3, '2025-01-03 10:00:00', '2025-01-03 10:00:00')");
+			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, happen_date, abandoned_animal_id, created_at, updated_at) VALUES " +
+				"(1, 'http://example.com/profile1.jpg', '2025-01-01', 1, '2025-01-01 10:00:00', '2025-01-01 10:00:00'), " +
+				"(2, 'http://example.com/profile2.jpg', '2025-01-02', 2, '2025-01-02 10:00:00', '2025-01-02 10:00:00'), " +
+				"(3, 'http://example.com/profile3.jpg', '2025-01-03', 3, '2025-01-03 10:00:00', '2025-01-03 10:00:00')");
 	}
 
 	private int countS3Profiles() {
