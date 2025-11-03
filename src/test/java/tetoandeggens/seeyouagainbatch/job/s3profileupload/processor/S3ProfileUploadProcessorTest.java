@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -53,24 +52,22 @@ class S3ProfileUploadProcessorTest {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void setupSuccessfulHttpResponse() throws Exception {
+	private HttpResponse<InputStream> createSuccessfulHttpResponse() {
 		HttpResponse<InputStream> response = (HttpResponse<InputStream>) mock(HttpResponse.class);
-		HttpHeaders headers = mock(HttpHeaders.class);
 
 		when(response.statusCode()).thenReturn(200);
-		when(response.headers()).thenReturn(headers);
-		when(headers.firstValueAsLong("Content-Length")).thenReturn(java.util.OptionalLong.of(1024));
 		when(response.body()).thenAnswer(invocation -> new ByteArrayInputStream(new byte[1024]));
 
-		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
-		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
-			.thenReturn(PutObjectResponse.builder().build());
+		return response;
 	}
 
 	@Test
 	@DisplayName("S3 업로드 성공 시 AbandonedAnimalS3Profile을 반환한다")
 	void shouldReturnS3ProfileWhenUploadSucceeds() throws Exception {
-		setupSuccessfulHttpResponse();
+		HttpResponse<InputStream> response = createSuccessfulHttpResponse();
+		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
+		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
+			.thenReturn(PutObjectResponse.builder().build());
 
 		AbandonedAnimalS3Profile result = processor.process(testProfile);
 
@@ -107,7 +104,10 @@ class S3ProfileUploadProcessorTest {
 	@Test
 	@DisplayName("여러 프로필을 순차적으로 처리할 수 있다")
 	void shouldProcessMultipleProfiles() throws Exception {
-		setupSuccessfulHttpResponse();
+		HttpResponse<InputStream> response = createSuccessfulHttpResponse();
+		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
+		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
+			.thenReturn(PutObjectResponse.builder().build());
 
 		AbandonedAnimalProfile profile1 = AbandonedAnimalProfile.builder()
 			.profile("http://example.com/profile1.jpg")
