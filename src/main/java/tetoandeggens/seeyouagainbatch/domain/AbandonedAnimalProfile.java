@@ -43,4 +43,8 @@ public class AbandonedAnimalProfile extends BaseEntity {
 		this.happenDate = happenDate;
 		this.abandonedAnimal = abandonedAnimal;
 	}
+
+	public void clearProfile() {
+		this.profile = null;
+	}
 }
