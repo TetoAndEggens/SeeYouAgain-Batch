@@ -27,8 +27,8 @@ public class AbandonedAnimalS3Profile extends BaseEntity {
 	@Column(name = "abandoned_animal_s3_profile_id")
 	private Long id;
 
-	@Column(name = "object_key", unique = true)
-	private String objectKey;
+	@Column(name = "profile", unique = true)
+	private String profile;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "image_type")
@@ -39,8 +39,8 @@ public class AbandonedAnimalS3Profile extends BaseEntity {
 	private AbandonedAnimal abandonedAnimal;
 
 	@Builder
-	public AbandonedAnimalS3Profile(String objectKey, AbandonedAnimal abandonedAnimal) {
-		this.objectKey = objectKey;
+	public AbandonedAnimalS3Profile(String profile, AbandonedAnimal abandonedAnimal) {
+		this.profile = profile;
 		this.abandonedAnimal = abandonedAnimal;
 	}
 }
