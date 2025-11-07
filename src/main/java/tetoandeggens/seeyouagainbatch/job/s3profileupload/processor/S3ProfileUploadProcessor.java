@@ -46,6 +46,9 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 	@Value("${aws.s3.bucket}")
 	private String bucketName;
 
+	@Value("${cloudfront.domain}")
+	private String cloudfrontDomain;
+
 	@Override
 	public AbandonedAnimalS3Profile process(AbandonedAnimalProfile profile) {
 		try {
@@ -53,7 +56,7 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 
 			if (s3Key != null) {
 				return AbandonedAnimalS3Profile.builder()
-					.objectKey(s3Key)
+					.profile(cloudfrontDomain + s3Key)
 					.abandonedAnimal(profile.getAbandonedAnimal())
 					.build();
 			} else {
@@ -100,7 +103,11 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 		return S3_KEY_PREFIX + abandonedAnimalProfileId + UNDERSCORE + uuid + FILE_EXTENSION;
 	}
 
-	private HttpResponse<InputStream> downloadImageAsStream(String imageUrl) throws IOException, InterruptedException, URISyntaxException, ImageNotFoundException {
+	private HttpResponse<InputStream> downloadImageAsStream(String imageUrl) throws
+		IOException,
+		InterruptedException,
+		URISyntaxException,
+		ImageNotFoundException {
 		URI uri = encodeUrl(imageUrl);
 
 		HttpRequest request = HttpRequest.newBuilder()
