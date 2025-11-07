@@ -47,8 +47,7 @@ class S3ProfileUploadProcessorTest {
 			.abandonedAnimal(testAnimal)
 			.build();
 
-		processor = new S3ProfileUploadProcessor(s3Client, httpClient);
-		ReflectionTestUtils.setField(processor, "bucketName", "test-bucket");
+		processor = new S3ProfileUploadProcessor(s3Client, httpClient, "test-bucket", "");
 	}
 
 	@SuppressWarnings("unchecked")

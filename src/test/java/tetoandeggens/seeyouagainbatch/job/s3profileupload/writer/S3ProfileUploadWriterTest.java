@@ -65,7 +65,7 @@ class S3ProfileUploadWriterTest {
 
 		String sql = sqlCaptor.getValue();
 		assertThat(sql).contains("INSERT INTO abandoned_animal_s3_profile");
-		assertThat(sql).contains("object_key");
+		assertThat(sql).contains("profile");
 		assertThat(sql).contains("image_type");
 		assertThat(sql).contains("abandoned_animal_id");
 		assertThat(sql).doesNotContain("ON DUPLICATE KEY UPDATE");
