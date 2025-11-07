@@ -46,6 +46,9 @@ aws:
     region: ap-northeast-2
     bucket: test-bucket
 
+cloudfront:
+  domain: test/test
+
 logging:
   level:
     org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: ERROR
