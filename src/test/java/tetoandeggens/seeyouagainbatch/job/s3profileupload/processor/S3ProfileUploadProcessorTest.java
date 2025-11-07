@@ -72,8 +72,8 @@ class S3ProfileUploadProcessorTest {
 		AbandonedAnimalS3Profile result = processor.process(testProfile);
 
 		assertThat(result).isNotNull();
-		assertThat(result.getObjectKey()).startsWith("abandoned-animal-profiles/");
-		assertThat(result.getObjectKey()).endsWith(".webp");
+		assertThat(result.getProfile()).startsWith("abandoned-animal-profiles/");
+		assertThat(result.getProfile()).endsWith(".webp");
 		assertThat(result.getAbandonedAnimal()).isEqualTo(testAnimal);
 		verify(httpClient, times(1)).send(any(), any());
 		verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
@@ -123,9 +123,9 @@ class S3ProfileUploadProcessorTest {
 		AbandonedAnimalS3Profile result2 = processor.process(profile2);
 
 		assertThat(result1).isNotNull();
-		assertThat(result1.getObjectKey()).startsWith("abandoned-animal-profiles/");
+		assertThat(result1.getProfile()).startsWith("abandoned-animal-profiles/");
 		assertThat(result2).isNotNull();
-		assertThat(result2.getObjectKey()).startsWith("abandoned-animal-profiles/");
+		assertThat(result2.getProfile()).startsWith("abandoned-animal-profiles/");
 		verify(httpClient, times(2)).send(any(), any());
 		verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
 	}

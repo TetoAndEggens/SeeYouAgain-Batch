@@ -147,14 +147,14 @@ class S3ProfileUploadWriterTest {
 		AbandonedAnimal animal = new AbandonedAnimal(animalId);
 
 		return AbandonedAnimalS3Profile.builder()
-			.objectKey(objectKey)
+			.profile(objectKey)
 			.abandonedAnimal(animal)
 			.build();
 	}
 
 	private AbandonedAnimalS3Profile createS3ProfileWithNullKey() {
 		return AbandonedAnimalS3Profile.builder()
-			.objectKey(null)
+			.profile(null)
 			.abandonedAnimal(testAnimal)
 			.build();
 	}

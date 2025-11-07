@@ -7,11 +7,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum AbandonedAnimalS3ProfileEntityField {
 
-	OBJECT_KEY("object_key"),
+	PROFILE("profile"),
 	IMAGE_TYPE("image_type"),
-	ABANDONED_ANIMAL_ID("abandoned_animal_id"),
-	CREATED_AT("created_at"),
-	UPDATED_AT("updated_at");
+	ABANDONED_ANIMAL_ID("abandoned_animal_id");
 
 	private final String columnName;
 }
