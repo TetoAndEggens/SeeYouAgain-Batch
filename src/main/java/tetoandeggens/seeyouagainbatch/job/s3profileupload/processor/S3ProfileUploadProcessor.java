@@ -25,7 +25,6 @@ import tetoandeggens.seeyouagainbatch.job.s3profileupload.exception.ImageNotFoun
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalProfile, AbandonedAnimalS3Profile> {
 
 	private static final String S3_KEY_PREFIX = "abandoned-animal-profiles/";
@@ -42,12 +41,20 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 
 	private final S3Client s3Client;
 	private final HttpClient httpClient;
+	private final String bucketName;
+	private final String cloudfrontDomain;
 
-	@Value("${aws.s3.bucket}")
-	private String bucketName;
-
-	@Value("${cloudfront.domain}")
-	private String cloudfrontDomain;
+	public S3ProfileUploadProcessor(
+		S3Client s3Client,
+		HttpClient httpClient,
+		@Value("${aws.s3.bucket}") String bucketName,
+		@Value("${cloudfront.domain}") String cloudfrontDomain
+	) {
+		this.s3Client = s3Client;
+		this.httpClient = httpClient;
+		this.bucketName = bucketName;
+		this.cloudfrontDomain = cloudfrontDomain;
+	}
 
 	@Override
 	public AbandonedAnimalS3Profile process(AbandonedAnimalProfile profile) {
