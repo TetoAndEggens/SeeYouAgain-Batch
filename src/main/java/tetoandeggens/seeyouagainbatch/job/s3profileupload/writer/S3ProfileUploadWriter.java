@@ -28,7 +28,7 @@ public class S3ProfileUploadWriter implements ItemWriter<AbandonedAnimalS3Profil
 	@Override
 	public void write(Chunk<? extends AbandonedAnimalS3Profile> chunk) {
 		List<? extends AbandonedAnimalS3Profile> validItems = chunk.getItems().stream()
-			.filter(item -> item != null && item.getObjectKey() != null)
+			.filter(item -> item != null && item.getProfile() != null)
 			.collect(Collectors.toList());
 
 		if (validItems.isEmpty()) {
@@ -39,14 +39,14 @@ public class S3ProfileUploadWriter implements ItemWriter<AbandonedAnimalS3Profil
 	}
 
 	private void bulkInsertS3Profiles(List<? extends AbandonedAnimalS3Profile> profiles) {
-		String insertSql = "INSERT INTO abandoned_animal_s3_profile (object_key, image_type, abandoned_animal_id, created_at, updated_at) " +
-			"VALUES (:object_key, :image_type, :abandoned_animal_id, NOW(), NOW())";
+		String insertSql = "INSERT INTO abandoned_animal_s3_profile (profile, image_type, abandoned_animal_id, created_at, updated_at) " +
+			"VALUES (:profile, :image_type, :abandoned_animal_id, NOW(), NOW())";
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[profiles.size()];
 		for (int i = 0; i < profiles.size(); i++) {
 			AbandonedAnimalS3Profile profile = profiles.get(i);
 			batchParams[i] = new MapSqlParameterSource()
-				.addValue(AbandonedAnimalS3ProfileEntityField.OBJECT_KEY.getColumnName(), profile.getObjectKey())
+				.addValue(AbandonedAnimalS3ProfileEntityField.PROFILE.getColumnName(), profile.getProfile())
 				.addValue(AbandonedAnimalS3ProfileEntityField.IMAGE_TYPE.getColumnName(), profile.getImageType().name())
 				.addValue(AbandonedAnimalS3ProfileEntityField.ABANDONED_ANIMAL_ID.getColumnName(), profile.getAbandonedAnimal().getId());
 		}
