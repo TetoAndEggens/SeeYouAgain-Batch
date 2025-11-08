@@ -1,18 +1,17 @@
 package tetoandeggens.seeyouagainbatch.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 
 @Entity
-@Table(name = "CENTER_LOCATION")
+@Table(name = "center_location")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CenterLocation extends BaseEntity {
@@ -28,28 +27,28 @@ public class CenterLocation extends BaseEntity {
 	@Column(name = "address")
 	private String address;
 
-	@Column(name = "detail_address")
-	private String detailAddress;
-
-	@Column(name = "latitude")
-	private Double latitude;
-
-	@Column(name = "longitude")
-	private Double longitude;
+	@Column(name = "coordinates", columnDefinition = "POINT SRID 4326", nullable = false)
+	private Point coordinates;
 
 	@Column(name = "center_no", unique = true)
 	private String centerNo;
 
+	private static final GeometryFactory geometryFactory =
+		new GeometryFactory(new PrecisionModel(), 4326);
+
 	@Builder
-	public CenterLocation(Long id, String address, String centerNo, String detailAddress, Double latitude,
-		Double longitude,
-		String name) {
+	public CenterLocation(Long id, String address, String centerNo,
+		Double latitude, Double longitude, String name) {
 		this.id = id;
 		this.address = address;
 		this.centerNo = centerNo;
-		this.detailAddress = detailAddress;
-		this.latitude = latitude;
-		this.longitude = longitude;
 		this.name = name;
+		double lon = (longitude != null) ? longitude : 0.0;
+		double lat = (latitude != null) ? latitude : 0.0;
+		this.coordinates = createPoint(lon, lat);
+	}
+
+	public static Point createPoint(double longitude, double latitude) {
+		return geometryFactory.createPoint(new Coordinate(longitude, latitude));
 	}
 }
