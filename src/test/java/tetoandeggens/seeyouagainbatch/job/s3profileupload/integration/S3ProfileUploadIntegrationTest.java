@@ -225,8 +225,8 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 
 	private void setupTestData() {
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
-			"INSERT INTO center_location (center_location_id, name, address, center_no, longitude, latitude, created_at, updated_at) " +
-				"VALUES (1, '테스트 보호소', '서울시 강남구', 'TEST-001', 127.0, 37.0, NOW(), NOW())");
+			"INSERT INTO center_location (center_location_id, name, address, center_no, coordinates, created_at, updated_at) " +
+				"VALUES (1, '테스트 보호소', '서울시 강남구', 'TEST-001', ST_GeomFromText('POINT(37.0 127.0)', 4326), NOW(), NOW())");
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
 			"INSERT INTO breed_type (breed_type_id, code, name, type, created_at, updated_at) " +
