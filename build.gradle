@@ -27,6 +27,7 @@ repositories {
 ext {
     set('queryDslVersion', '5.1.0')
     set('springCloudVersion', '2025.0.0')
+    set('hibernateVersion', '6.4.1.Final')
 }
 
 dependencies {
@@ -46,6 +47,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Hibernate Spatial (POINT 타입 지원) - 추가!
+    implementation "org.hibernate.orm:hibernate-spatial:${hibernateVersion}"
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

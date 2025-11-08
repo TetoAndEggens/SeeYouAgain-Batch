@@ -105,18 +105,22 @@ public class CenterLocationService {
 
 	private void bulkInsertCenterLocations(List<CenterLocation> centerLocations) {
 		String sql =
-			"INSERT INTO center_location (name, address, center_no, latitude, longitude, created_at, updated_at) " +
-				"VALUES (:name, :address, :center_no, :latitude, :longitude, NOW(), NOW())";
+			"INSERT INTO center_location (name, address, center_no, coordinates, created_at, updated_at) " +
+				"VALUES (:name, :address, :center_no, ST_GeomFromText(:coordinates, 4326), NOW(), NOW())";
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[centerLocations.size()];
 		for (int i = 0; i < centerLocations.size(); i++) {
 			CenterLocation location = centerLocations.get(i);
+			// SRID 4326: POINT(latitude longitude) 형식
+			String wkt = String.format("POINT(%f %f)",
+				location.getCoordinates().getY(),
+				location.getCoordinates().getX());
+
 			batchParams[i] = new MapSqlParameterSource()
 				.addValue(CenterLocationEntityField.NAME.getColumnName(), location.getName())
 				.addValue(CenterLocationEntityField.ADDRESS.getColumnName(), location.getAddress())
 				.addValue(CenterLocationEntityField.CENTER_NO.getColumnName(), location.getCenterNo())
-				.addValue(CenterLocationEntityField.LATITUDE.getColumnName(), location.getLatitude())
-				.addValue(CenterLocationEntityField.LONGITUDE.getColumnName(), location.getLongitude());
+				.addValue(CenterLocationEntityField.COORDINATES.getColumnName(), wkt);
 		}
 
 		namedParameterJdbcTemplate.batchUpdate(sql, batchParams);
