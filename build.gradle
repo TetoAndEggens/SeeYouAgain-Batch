@@ -48,7 +48,7 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Hibernate Spatial (POINT 타입 지원) - 추가!
+    // Hibernate Spatial
     implementation "org.hibernate.orm:hibernate-spatial:${hibernateVersion}"
 
     // Lombok
