@@ -9,6 +9,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class SeeYouAgainBatchApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SeeYouAgainBatchApplication.class, args);
+		System.exit(SpringApplication.exit(SpringApplication.run(SeeYouAgainBatchApplication.class, args)));
 	}
 }
