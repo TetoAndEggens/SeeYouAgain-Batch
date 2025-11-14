@@ -98,7 +98,7 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 	@Test
 	@DisplayName("프로필이 없으면 Job이 정상 완료되어야 한다")
 	void shouldCompleteSuccessfullyWithNoProfiles() throws Exception {
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_profile");
+		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_profile");
 
 		JobExecution jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
 
@@ -138,8 +138,8 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 	@Test
 	@DisplayName("대량의 프로필도 청크 단위로 정상 처리되어야 한다")
 	void shouldProcessLargeVolumeInChunks() throws Exception {
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_profile");
-		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal");
+		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_profile");
+		namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal");
 
 		setupLargeTestData(500);
 
@@ -183,15 +183,15 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 	}
 
 	private void setupLargeTestData(int count) {
-		insertLargeTestAbandonedAnimals(count);
+		insertLargeTestAnimals(count);
 		insertLargeTestProfiles(count);
 	}
 
-	private void insertLargeTestAbandonedAnimals(int count) {
+	private void insertLargeTestAnimals(int count) {
 		StringBuilder sql = new StringBuilder(
-			"INSERT INTO abandoned_animal (abandoned_animal_id, desertion_no, happen_date, happen_place, " +
+			"INSERT INTO animal (animal_id, desertion_no, happen_date, happen_place, " +
 				"color, birth, weight, notice_no, notice_start_date, notice_end_date, " +
-				"process_state, sex, neutered_state, special_mark, species, center_location_id, breed_type_id, created_at, updated_at) VALUES ");
+				"process_state, sex, neutered_state, special_mark, species, animal_location_id, breed_type_id, created_at, updated_at) VALUES ");
 
 		for (int i = 1; i <= count; i++) {
 			if (i > 1) {
@@ -207,7 +207,7 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 
 	private void insertLargeTestProfiles(int count) {
 		StringBuilder sql = new StringBuilder(
-			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, happen_date, abandoned_animal_id, created_at, updated_at) VALUES ");
+			"INSERT INTO animal_profile (animal_profile_id, profile, happen_date, animal_id, created_at, updated_at) VALUES ");
 
 		for (int i = 1; i <= count; i++) {
 			if (i > 1) {
@@ -225,7 +225,7 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 
 	private void setupTestData() {
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
-			"INSERT INTO center_location (center_location_id, name, address, center_no, coordinates, created_at, updated_at) " +
+			"INSERT INTO animal_location (animal_location_id, name, address, center_no, coordinates, created_at, updated_at) " +
 				"VALUES (1, '테스트 보호소', '서울시 강남구', 'TEST-001', ST_GeomFromText('POINT(37.0 127.0)', 4326), NOW(), NOW())");
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
@@ -233,10 +233,10 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 				"VALUES (1, '417000', '믹스견', 'DOG', NOW(), NOW())");
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
-			"INSERT INTO abandoned_animal (abandoned_animal_id, desertion_no, happen_date, happen_place, " +
+			"INSERT INTO animal (animal_id, desertion_no, happen_date, happen_place, " +
 				"color, birth, weight, notice_no, notice_start_date, notice_end_date, " +
 				"process_state, sex, neutered_state, special_mark, species, " +
-				"center_location_id, breed_type_id, created_at, updated_at) VALUES " +
+				"animal_location_id, breed_type_id, created_at, updated_at) VALUES " +
 				"(1, 'TEST-001', '2025-01-01', '서울시 강남구', '갈색', '2020(년생)', '5(Kg)', 'NOTICE-001', " +
 				"'2025-01-01', '2025-01-15', '보호중', 'M', 'Y', '순함', 'DOG', 1, 1, NOW(), NOW()), " +
 				"(2, 'TEST-002', '2025-01-02', '서울시 송파구', '흰색', '2021(년생)', '4(Kg)', 'NOTICE-002', " +
@@ -245,7 +245,7 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 				"'2025-01-03', '2025-01-17', '보호중', 'M', 'Y', '조용함', 'DOG', 1, 1, NOW(), NOW())");
 
 		namedParameterJdbcTemplate.getJdbcTemplate().execute(
-			"INSERT INTO abandoned_animal_profile (abandoned_animal_profile_id, profile, happen_date, abandoned_animal_id, created_at, updated_at) VALUES " +
+			"INSERT INTO animal_profile (animal_profile_id, profile, happen_date, animal_id, created_at, updated_at) VALUES " +
 				"(1, 'http://example.com/profile1.jpg', '2025-01-01', 1, '2025-01-01 10:00:00', '2025-01-01 10:00:00'), " +
 				"(2, 'http://example.com/profile2.jpg', '2025-01-02', 2, '2025-01-02 10:00:00', '2025-01-02 10:00:00'), " +
 				"(3, 'http://example.com/profile3.jpg', '2025-01-03', 3, '2025-01-03 10:00:00', '2025-01-03 10:00:00')");
@@ -253,6 +253,6 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 
 	private int countS3Profiles() {
 		return namedParameterJdbcTemplate.getJdbcTemplate()
-			.queryForObject("SELECT COUNT(*) FROM abandoned_animal_s3_profile", Integer.class);
+			.queryForObject("SELECT COUNT(*) FROM animal_s3_profile", Integer.class);
 	}
 }

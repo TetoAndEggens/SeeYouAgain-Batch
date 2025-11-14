@@ -18,16 +18,16 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalProfile;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
 import tetoandeggens.seeyouagainbatch.domain.ImageType;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.exception.ImageNotFoundException;
 
 @Slf4j
 @Component
-public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalProfile, AbandonedAnimalS3Profile> {
+public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, AnimalS3Profile> {
 
-	private static final String S3_KEY_PREFIX = "abandoned-animal-profiles/";
+	private static final String S3_KEY_PREFIX = "animal-profiles/";
 	private static final String FILE_EXTENSION = ".webp";
 	private static final String UNDERSCORE = "_";
 	private static final String LEFT_BRACKET = "[";
@@ -57,14 +57,14 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 	}
 
 	@Override
-	public AbandonedAnimalS3Profile process(AbandonedAnimalProfile profile) {
+	public AnimalS3Profile process(AnimalProfile profile) {
 		try {
 			String s3Key = uploadProfileToS3(profile);
 
 			if (s3Key != null) {
-				return AbandonedAnimalS3Profile.builder()
+				return AnimalS3Profile.builder()
 					.profile(cloudfrontDomain + s3Key)
-					.abandonedAnimal(profile.getAbandonedAnimal())
+					.animal(profile.getAnimal())
 					.build();
 			} else {
 				return null;
@@ -80,7 +80,7 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 		}
 	}
 
-	private String uploadProfileToS3(AbandonedAnimalProfile profile) throws ImageNotFoundException {
+	private String uploadProfileToS3(AnimalProfile profile) throws ImageNotFoundException {
 		String profileUrl = profile.getProfile();
 		if (profileUrl == null || profileUrl.isBlank()) {
 			return null;
@@ -105,9 +105,9 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AbandonedAnimalPr
 		}
 	}
 
-	private String generateS3Key(Long abandonedAnimalProfileId) {
+	private String generateS3Key(Long animalProfileId) {
 		String uuid = UUID.randomUUID().toString();
-		return S3_KEY_PREFIX + abandonedAnimalProfileId + UNDERSCORE + uuid + FILE_EXTENSION;
+		return S3_KEY_PREFIX + animalProfileId + UNDERSCORE + uuid + FILE_EXTENSION;
 	}
 
 	private HttpResponse<InputStream> downloadImageAsStream(String imageUrl) throws

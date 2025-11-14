@@ -55,11 +55,11 @@ public abstract class BatchTestConfig {
 
     protected void cleanupTestData() {
         namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 0");
-        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_s3_profile");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_s3_profile");
         namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_by_keyword");
-        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal_profile");
-        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM abandoned_animal");
-        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM center_location");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_profile");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal");
+        namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM animal_location");
         namedParameterJdbcTemplate.getJdbcTemplate().execute("DELETE FROM breed_type");
         namedParameterJdbcTemplate.getJdbcTemplate().execute("SET FOREIGN_KEY_CHECKS = 1");
     }

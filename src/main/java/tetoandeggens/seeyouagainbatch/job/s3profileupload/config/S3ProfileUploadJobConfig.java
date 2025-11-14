@@ -19,9 +19,9 @@ import tetoandeggens.seeyouagainbatch.common.reader.QuerydslNoOffsetPagingItemRe
 import tetoandeggens.seeyouagainbatch.common.reader.QuerydslNoOffsetPagingItemReaderBuilder;
 import tetoandeggens.seeyouagainbatch.common.reader.expression.Expression;
 import tetoandeggens.seeyouagainbatch.common.reader.options.QuerydslNoOffsetNumberOptions;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalProfile;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalS3Profile;
-import tetoandeggens.seeyouagainbatch.domain.QAbandonedAnimalProfile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.domain.QAnimalProfile;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.parameter.S3ProfileUploadJobParameter;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.processor.S3ProfileUploadProcessor;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.validator.S3ProfileUploadJobParametersValidator;
@@ -53,8 +53,8 @@ public class S3ProfileUploadJobConfig {
 	@Bean
 	public Step s3ProfileUploadStep() {
 		return new StepBuilder("s3ProfileUploadStep", jobRepository)
-			.<AbandonedAnimalProfile, AbandonedAnimalS3Profile>chunk(CHUNK_SIZE, businessTransactionManager)
-			.reader(abandonedAnimalProfileReader())
+			.<AnimalProfile, AnimalS3Profile>chunk(CHUNK_SIZE, businessTransactionManager)
+			.reader(animalProfileReader())
 			.processor(s3ProfileUploadProcessor)
 			.writer(s3ProfileUploadWriter)
 			.build();
@@ -62,16 +62,16 @@ public class S3ProfileUploadJobConfig {
 
 	@Bean
 	@StepScope
-	public QuerydslNoOffsetPagingItemReader<AbandonedAnimalProfile> abandonedAnimalProfileReader() {
-		QAbandonedAnimalProfile profile = QAbandonedAnimalProfile.abandonedAnimalProfile;
+	public QuerydslNoOffsetPagingItemReader<AnimalProfile> animalProfileReader() {
+		QAnimalProfile profile = QAnimalProfile.animalProfile;
 
 		LocalDate startDate = LocalDate.parse(jobParameter.getStartDate(), DATE_FORMATTER);
 		LocalDate endDate = LocalDate.parse(jobParameter.getEndDate(), DATE_FORMATTER);
 
-		QuerydslNoOffsetNumberOptions<AbandonedAnimalProfile, Long> options =
+		QuerydslNoOffsetNumberOptions<AnimalProfile, Long> options =
 			QuerydslNoOffsetNumberOptions.of(profile.id, Expression.ASC);
 
-		return QuerydslNoOffsetPagingItemReaderBuilder.<AbandonedAnimalProfile>builder()
+		return QuerydslNoOffsetPagingItemReaderBuilder.<AnimalProfile>builder()
 			.entityManagerFactory(entityManagerFactory)
 			.pageSize(CHUNK_SIZE)
 			.options(options)
