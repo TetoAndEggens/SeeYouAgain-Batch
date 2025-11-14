@@ -20,9 +20,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimal;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalProfile;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.domain.Animal;
+import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
 
 @ExtendWith(MockitoExtension.class)
 class S3ProfileUploadProcessorTest {
@@ -35,16 +35,16 @@ class S3ProfileUploadProcessorTest {
 
 	private S3ProfileUploadProcessor processor;
 
-	private AbandonedAnimalProfile testProfile;
-	private AbandonedAnimal testAnimal;
+	private AnimalProfile testProfile;
+	private Animal testAnimal;
 
 	@BeforeEach
 	void setUp() {
-		testAnimal = new AbandonedAnimal(1L);
+		testAnimal = new Animal(1L);
 
-		testProfile = AbandonedAnimalProfile.builder()
+		testProfile = AnimalProfile.builder()
 			.profile("http://example.com/profile.jpg")
-			.abandonedAnimal(testAnimal)
+			.animal(testAnimal)
 			.build();
 
 		processor = new S3ProfileUploadProcessor(s3Client, httpClient, "test-bucket", "");
@@ -61,19 +61,19 @@ class S3ProfileUploadProcessorTest {
 	}
 
 	@Test
-	@DisplayName("S3 업로드 성공 시 AbandonedAnimalS3Profile을 반환한다")
+	@DisplayName("S3 업로드 성공 시 AnimalS3Profile을 반환한다")
 	void shouldReturnS3ProfileWhenUploadSucceeds() throws Exception {
 		HttpResponse<InputStream> response = createSuccessfulHttpResponse();
 		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
 		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
 			.thenReturn(PutObjectResponse.builder().build());
 
-		AbandonedAnimalS3Profile result = processor.process(testProfile);
+		AnimalS3Profile result = processor.process(testProfile);
 
 		assertThat(result).isNotNull();
-		assertThat(result.getProfile()).startsWith("abandoned-animal-profiles/");
+		assertThat(result.getProfile()).startsWith("animal-profiles/");
 		assertThat(result.getProfile()).endsWith(".webp");
-		assertThat(result.getAbandonedAnimal()).isEqualTo(testAnimal);
+		assertThat(result.getAnimal()).isEqualTo(testAnimal);
 		verify(httpClient, times(1)).send(any(), any());
 		verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
 	}
@@ -83,7 +83,7 @@ class S3ProfileUploadProcessorTest {
 	void shouldReturnNullWhenUploadFails() throws Exception {
 		when(httpClient.send(any(), any())).thenThrow(new RuntimeException("HTTP 요청 실패"));
 
-		AbandonedAnimalS3Profile result = processor.process(testProfile);
+		AnimalS3Profile result = processor.process(testProfile);
 
 		assertThat(result).isNull();
 		verify(httpClient, times(1)).send(any(), any());
@@ -94,7 +94,7 @@ class S3ProfileUploadProcessorTest {
 	void shouldReturnNullWhenExceptionOccurs() throws Exception {
 		when(httpClient.send(any(), any())).thenThrow(new RuntimeException("S3 업로드 실패"));
 
-		AbandonedAnimalS3Profile result = processor.process(testProfile);
+		AnimalS3Profile result = processor.process(testProfile);
 
 		assertThat(result).isNull();
 		verify(httpClient, times(1)).send(any(), any());
@@ -108,23 +108,23 @@ class S3ProfileUploadProcessorTest {
 		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
 			.thenReturn(PutObjectResponse.builder().build());
 
-		AbandonedAnimalProfile profile1 = AbandonedAnimalProfile.builder()
+		AnimalProfile profile1 = AnimalProfile.builder()
 			.profile("http://example.com/profile1.jpg")
-			.abandonedAnimal(testAnimal)
+			.animal(testAnimal)
 			.build();
 
-		AbandonedAnimalProfile profile2 = AbandonedAnimalProfile.builder()
+		AnimalProfile profile2 = AnimalProfile.builder()
 			.profile("http://example.com/profile2.jpg")
-			.abandonedAnimal(testAnimal)
+			.animal(testAnimal)
 			.build();
 
-		AbandonedAnimalS3Profile result1 = processor.process(profile1);
-		AbandonedAnimalS3Profile result2 = processor.process(profile2);
+		AnimalS3Profile result1 = processor.process(profile1);
+		AnimalS3Profile result2 = processor.process(profile2);
 
 		assertThat(result1).isNotNull();
-		assertThat(result1.getProfile()).startsWith("abandoned-animal-profiles/");
+		assertThat(result1.getProfile()).startsWith("animal-profiles/");
 		assertThat(result2).isNotNull();
-		assertThat(result2.getProfile()).startsWith("abandoned-animal-profiles/");
+		assertThat(result2.getProfile()).startsWith("animal-profiles/");
 		verify(httpClient, times(2)).send(any(), any());
 		verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
 	}

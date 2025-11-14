@@ -12,12 +12,12 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
-import tetoandeggens.seeyouagainbatch.constant.AbandonedAnimalS3ProfileEntityField;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.constant.AnimalS3ProfileEntityField;
+import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
 
 @Slf4j
 @Component
-public class S3ProfileUploadWriter implements ItemWriter<AbandonedAnimalS3Profile> {
+public class S3ProfileUploadWriter implements ItemWriter<AnimalS3Profile> {
 
 	private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
@@ -26,8 +26,8 @@ public class S3ProfileUploadWriter implements ItemWriter<AbandonedAnimalS3Profil
 	}
 
 	@Override
-	public void write(Chunk<? extends AbandonedAnimalS3Profile> chunk) {
-		List<? extends AbandonedAnimalS3Profile> validItems = chunk.getItems().stream()
+	public void write(Chunk<? extends AnimalS3Profile> chunk) {
+		List<? extends AnimalS3Profile> validItems = chunk.getItems().stream()
 			.filter(item -> item != null && item.getProfile() != null)
 			.collect(Collectors.toList());
 
@@ -38,17 +38,17 @@ public class S3ProfileUploadWriter implements ItemWriter<AbandonedAnimalS3Profil
 		bulkInsertS3Profiles(validItems);
 	}
 
-	private void bulkInsertS3Profiles(List<? extends AbandonedAnimalS3Profile> profiles) {
-		String insertSql = "INSERT INTO abandoned_animal_s3_profile (profile, image_type, abandoned_animal_id, created_at, updated_at) " +
-			"VALUES (:profile, :image_type, :abandoned_animal_id, NOW(), NOW())";
+	private void bulkInsertS3Profiles(List<? extends AnimalS3Profile> profiles) {
+		String insertSql = "INSERT INTO animal_s3_profile (profile, image_type, animal_id, created_at, updated_at) " +
+			"VALUES (:profile, :image_type, :animal_id, NOW(), NOW())";
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[profiles.size()];
 		for (int i = 0; i < profiles.size(); i++) {
-			AbandonedAnimalS3Profile profile = profiles.get(i);
+			AnimalS3Profile profile = profiles.get(i);
 			batchParams[i] = new MapSqlParameterSource()
-				.addValue(AbandonedAnimalS3ProfileEntityField.PROFILE.getColumnName(), profile.getProfile())
-				.addValue(AbandonedAnimalS3ProfileEntityField.IMAGE_TYPE.getColumnName(), profile.getImageType().name())
-				.addValue(AbandonedAnimalS3ProfileEntityField.ABANDONED_ANIMAL_ID.getColumnName(), profile.getAbandonedAnimal().getId());
+				.addValue(AnimalS3ProfileEntityField.PROFILE.getColumnName(), profile.getProfile())
+				.addValue(AnimalS3ProfileEntityField.IMAGE_TYPE.getColumnName(), profile.getImageType().name())
+				.addValue(AnimalS3ProfileEntityField.ANIMAL_ID.getColumnName(), profile.getAnimal().getId());
 		}
 
 		namedParameterJdbcTemplate.batchUpdate(insertSql, batchParams);

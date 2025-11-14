@@ -22,7 +22,7 @@ import javax.sql.DataSource;
 @EnableJpaRepositories(
     basePackages = {
         "tetoandeggens.seeyouagainbatch.domain",
-        "tetoandeggens.seeyouagainbatch.job.abandonedanimaldataload.repository"
+        "tetoandeggens.seeyouagainbatch.job.animaldataload.repository"
     },
     entityManagerFactoryRef = "businessEntityManagerFactory",
     transactionManagerRef = "businessTransactionManager"

@@ -19,8 +19,8 @@ import org.springframework.batch.item.Chunk;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimal;
-import tetoandeggens.seeyouagainbatch.domain.AbandonedAnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.domain.Animal;
+import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
 
 @ExtendWith(MockitoExtension.class)
 class S3ProfileUploadWriterTest {
@@ -37,23 +37,23 @@ class S3ProfileUploadWriterTest {
 	@Captor
 	private ArgumentCaptor<SqlParameterSource[]> paramsCaptor;
 
-	private AbandonedAnimal testAnimal;
+	private Animal testAnimal;
 
 	@BeforeEach
 	void setUp() {
-		testAnimal = new AbandonedAnimal(1L);
+		testAnimal = new Animal(1L);
 	}
 
 	@Test
 	@DisplayName("여러 개의 S3 프로필을 bulk insert 한다")
 	void shouldBulkInsertMultipleS3Profiles() {
-		List<AbandonedAnimalS3Profile> profiles = List.of(
+		List<AnimalS3Profile> profiles = List.of(
 			createS3Profile("s3-key-1", 1L),
 			createS3Profile("s3-key-2", 2L),
 			createS3Profile("s3-key-3", 3L)
 		);
 
-		Chunk<AbandonedAnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
 
 		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
 			.thenReturn(new int[]{1, 1, 1});
@@ -64,10 +64,10 @@ class S3ProfileUploadWriterTest {
 			.batchUpdate(sqlCaptor.capture(), paramsCaptor.capture());
 
 		String sql = sqlCaptor.getValue();
-		assertThat(sql).contains("INSERT INTO abandoned_animal_s3_profile");
+		assertThat(sql).contains("INSERT INTO animal_s3_profile");
 		assertThat(sql).contains("profile");
 		assertThat(sql).contains("image_type");
-		assertThat(sql).contains("abandoned_animal_id");
+		assertThat(sql).contains("animal_id");
 		assertThat(sql).doesNotContain("ON DUPLICATE KEY UPDATE");
 
 		SqlParameterSource[] params = paramsCaptor.getValue();
@@ -77,13 +77,13 @@ class S3ProfileUploadWriterTest {
 	@Test
 	@DisplayName("null 항목은 필터링하고 유효한 항목만 insert 한다")
 	void shouldFilterNullItemsAndInsertValidOnes() {
-		List<AbandonedAnimalS3Profile> profiles = List.of(
+		List<AnimalS3Profile> profiles = List.of(
 			createS3Profile("s3-key-1", 1L),
 			createS3ProfileWithNullKey(),
 			createS3Profile("s3-key-3", 3L)
 		);
 
-		Chunk<AbandonedAnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
 
 		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
 			.thenReturn(new int[]{1, 1});
@@ -100,7 +100,7 @@ class S3ProfileUploadWriterTest {
 	@Test
 	@DisplayName("빈 chunk는 insert를 수행하지 않는다")
 	void shouldNotInsertWhenChunkIsEmpty() {
-		Chunk<AbandonedAnimalS3Profile> emptyChunk = new Chunk<>();
+		Chunk<AnimalS3Profile> emptyChunk = new Chunk<>();
 
 		writer.write(emptyChunk);
 
@@ -110,12 +110,12 @@ class S3ProfileUploadWriterTest {
 	@Test
 	@DisplayName("모든 항목이 null인 경우 insert를 수행하지 않는다")
 	void shouldNotInsertWhenAllItemsAreInvalid() {
-		List<AbandonedAnimalS3Profile> profiles = List.of(
+		List<AnimalS3Profile> profiles = List.of(
 			createS3ProfileWithNullKey(),
 			createS3ProfileWithNullKey()
 		);
 
-		Chunk<AbandonedAnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
 
 		writer.write(chunk);
 
@@ -125,11 +125,11 @@ class S3ProfileUploadWriterTest {
 	@Test
 	@DisplayName("단일 항목도 정상적으로 insert 한다")
 	void shouldInsertSingleItem() {
-		List<AbandonedAnimalS3Profile> profiles = List.of(
+		List<AnimalS3Profile> profiles = List.of(
 			createS3Profile("s3-key-1", 1L)
 		);
 
-		Chunk<AbandonedAnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
 
 		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
 			.thenReturn(new int[]{1});
@@ -143,19 +143,19 @@ class S3ProfileUploadWriterTest {
 		assertThat(params).hasSize(1);
 	}
 
-	private AbandonedAnimalS3Profile createS3Profile(String objectKey, Long animalId) {
-		AbandonedAnimal animal = new AbandonedAnimal(animalId);
+	private AnimalS3Profile createS3Profile(String objectKey, Long animalId) {
+		Animal animal = new Animal(animalId);
 
-		return AbandonedAnimalS3Profile.builder()
+		return AnimalS3Profile.builder()
 			.profile(objectKey)
-			.abandonedAnimal(animal)
+			.animal(animal)
 			.build();
 	}
 
-	private AbandonedAnimalS3Profile createS3ProfileWithNullKey() {
-		return AbandonedAnimalS3Profile.builder()
+	private AnimalS3Profile createS3ProfileWithNullKey() {
+		return AnimalS3Profile.builder()
 			.profile(null)
-			.abandonedAnimal(testAnimal)
+			.animal(testAnimal)
 			.build();
 	}
 }
