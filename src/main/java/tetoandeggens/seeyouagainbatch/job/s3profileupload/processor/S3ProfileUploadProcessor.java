@@ -28,6 +28,7 @@ import tetoandeggens.seeyouagainbatch.job.s3profileupload.exception.ImageNotFoun
 public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, AnimalS3Profile> {
 
 	private static final String S3_KEY_PREFIX = "animal-profiles/";
+	private static final String PUBLIC_DATA_PREFIX = "public-data/";
 	private static final String FILE_EXTENSION = ".webp";
 	private static final String UNDERSCORE = "_";
 	private static final String LEFT_BRACKET = "[";
@@ -107,7 +108,7 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 
 	private String generateS3Key(Long animalProfileId) {
 		String uuid = UUID.randomUUID().toString();
-		return S3_KEY_PREFIX + animalProfileId + UNDERSCORE + uuid + FILE_EXTENSION;
+		return S3_KEY_PREFIX + PUBLIC_DATA_PREFIX + animalProfileId + UNDERSCORE + uuid + FILE_EXTENSION;
 	}
 
 	private HttpResponse<InputStream> downloadImageAsStream(String imageUrl) throws
