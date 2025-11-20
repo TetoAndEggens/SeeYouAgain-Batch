@@ -39,8 +39,8 @@ public class S3ProfileUploadWriter implements ItemWriter<AnimalS3Profile> {
 	}
 
 	private void bulkInsertS3Profiles(List<? extends AnimalS3Profile> profiles) {
-		String insertSql = "INSERT INTO animal_s3_profile (profile, image_type, animal_id, created_at, updated_at) " +
-			"VALUES (:profile, :image_type, :animal_id, NOW(), NOW())";
+		String insertSql = "INSERT INTO animal_s3_profile (profile, image_type, animal_id, is_deleted, created_at, updated_at) " +
+			"VALUES (:profile, :image_type, :animal_id, false, NOW(), NOW())";
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[profiles.size()];
 		for (int i = 0; i < profiles.size(); i++) {

@@ -47,12 +47,13 @@ public class AnimalService {
 			"animal_type, desertion_no, happen_date, happen_place, city, town, species, color, birth, weight, " +
 			"notice_no, notice_start_date, notice_end_date, process_state, " +
 			"sex, neutered_state, special_mark, center_phone, final_updated_at, " +
-			"animal_location_id, breed_type_id, created_at, updated_at) " +
+			"animal_location_id, breed_type_id, is_deleted, created_at, updated_at) " +
 			"VALUES (" +
 			":animal_type, :desertion_no, :happen_date, :happen_place, :city, :town, :species, :color, :birth, :weight, " +
 			":notice_no, :notice_start_date, :notice_end_date, :process_state, " +
 			":sex, :neutered_state, :special_mark, :center_phone, :final_updated_at, " +
-			":animal_location_id, :breed_type_id, NOW(), NOW())";
+			":animal_location_id, :breed_type_id, false, NOW(), NOW())";
+
 
 		SqlParameterSource[] batchParams = new SqlParameterSource[animals.size()];
 		for (int i = 0; i < animals.size(); i++) {
