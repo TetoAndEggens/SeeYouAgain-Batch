@@ -92,7 +92,7 @@ public class Animal extends BaseEntity {
 	private LocalDateTime finalUpdatedAt;
 
 	@Column(name = "is_deleted")
-	private Boolean isDeleted = false;
+	private boolean isDeleted = false;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "animal_location_id")

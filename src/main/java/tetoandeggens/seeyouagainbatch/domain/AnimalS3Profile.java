@@ -35,7 +35,7 @@ public class AnimalS3Profile extends BaseEntity {
 	private ImageType imageType = ImageType.WEBP;
 
 	@Column(name = "is_deleted")
-	private Boolean isDeleted = false;
+	private boolean isDeleted = false;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "animal_id")
