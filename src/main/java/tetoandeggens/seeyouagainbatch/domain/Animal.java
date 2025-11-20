@@ -91,6 +91,9 @@ public class Animal extends BaseEntity {
 	@Column(name = "final_updated_at")
 	private LocalDateTime finalUpdatedAt;
 
+	@Column(name = "is_deleted")
+	private Boolean isDeleted = false;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "animal_location_id")
 	private AnimalLocation animalLocation;
@@ -130,5 +133,6 @@ public class Animal extends BaseEntity {
 		this.specialMark = specialMark;
 		this.species = species;
 		this.weight = weight;
+		this.isDeleted = false;
 	}
 }
