@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -31,4 +32,10 @@ public class AnimalByKeyword extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "animal_id")
 	private Animal animal;
+
+	@Builder
+	public AnimalByKeyword(NotificationKeyword notificationKeyword, Animal animal) {
+		this.notificationKeyword = notificationKeyword;
+		this.animal = animal;
+	}
 }
