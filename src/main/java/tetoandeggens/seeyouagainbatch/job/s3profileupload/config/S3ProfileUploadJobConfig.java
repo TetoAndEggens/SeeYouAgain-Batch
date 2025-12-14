@@ -20,8 +20,8 @@ import tetoandeggens.seeyouagainbatch.common.reader.QuerydslNoOffsetPagingItemRe
 import tetoandeggens.seeyouagainbatch.common.reader.expression.Expression;
 import tetoandeggens.seeyouagainbatch.common.reader.options.QuerydslNoOffsetNumberOptions;
 import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
-import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
 import tetoandeggens.seeyouagainbatch.domain.QAnimalProfile;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.dto.ProfileImageData;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.parameter.S3ProfileUploadJobParameter;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.processor.S3ProfileUploadProcessor;
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.validator.S3ProfileUploadJobParametersValidator;
@@ -53,7 +53,7 @@ public class S3ProfileUploadJobConfig {
 	@Bean
 	public Step s3ProfileUploadStep() {
 		return new StepBuilder("s3ProfileUploadStep", jobRepository)
-			.<AnimalProfile, AnimalS3Profile>chunk(CHUNK_SIZE, businessTransactionManager)
+			.<AnimalProfile, ProfileImageData>chunk(CHUNK_SIZE, businessTransactionManager)
 			.reader(animalProfileReader())
 			.processor(s3ProfileUploadProcessor)
 			.writer(s3ProfileUploadWriter)
