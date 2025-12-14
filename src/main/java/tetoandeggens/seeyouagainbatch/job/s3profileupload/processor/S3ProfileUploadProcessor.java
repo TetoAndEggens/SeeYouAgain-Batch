@@ -2,6 +2,8 @@ package tetoandeggens.seeyouagainbatch.job.s3profileupload.processor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -46,12 +48,15 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 	private final HttpClient httpClient;
 	private final String bucketName;
 	private final String cloudfrontDomain;
+	private final ThreadMXBean threadMXBean;
 
 	// 성능 측정용 변수
 	private final AtomicInteger processCount = new AtomicInteger(0);
 	private final AtomicLong totalDownloadTime = new AtomicLong(0);
 	private final AtomicLong totalUploadTime = new AtomicLong(0);
 	private final AtomicLong totalProcessTime = new AtomicLong(0);
+	private final AtomicLong totalDownloadCpuTime = new AtomicLong(0);
+	private final AtomicLong totalUploadCpuTime = new AtomicLong(0);
 
 	public S3ProfileUploadProcessor(
 		S3Client s3Client,
@@ -63,6 +68,7 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 		this.httpClient = httpClient;
 		this.bucketName = bucketName;
 		this.cloudfrontDomain = cloudfrontDomain;
+		this.threadMXBean = ManagementFactory.getThreadMXBean();
 	}
 
 	@Override
@@ -101,21 +107,35 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 		long processStartTime = System.currentTimeMillis();
 		long downloadTime = 0;
 		long uploadTime = 0;
+		long downloadCpuTime = 0;
+		long uploadCpuTime = 0;
 
 		try {
 			// 다운로드 시작 시간 측정
 			long downloadStartTime = System.currentTimeMillis();
+			long downloadCpuStartTime = threadMXBean.getCurrentThreadCpuTime();
+
 			HttpResponse<InputStream> response = downloadImageAsStream(profileUrl);
+
+			long downloadCpuEndTime = threadMXBean.getCurrentThreadCpuTime();
 			long downloadEndTime = System.currentTimeMillis();
+
 			downloadTime = downloadEndTime - downloadStartTime;
+			downloadCpuTime = (downloadCpuEndTime - downloadCpuStartTime) / 1_000_000; // 나노초 → 밀리초
 
 			// S3 업로드 시작 시간 측정
 			long uploadStartTime = System.currentTimeMillis();
+			long uploadCpuStartTime = threadMXBean.getCurrentThreadCpuTime();
+
 			try (InputStream inputStream = response.body()) {
 				uploadToS3(s3Key, inputStream);
 			}
+
+			long uploadCpuEndTime = threadMXBean.getCurrentThreadCpuTime();
 			long uploadEndTime = System.currentTimeMillis();
+
 			uploadTime = uploadEndTime - uploadStartTime;
+			uploadCpuTime = (uploadCpuEndTime - uploadCpuStartTime) / 1_000_000; // 나노초 → 밀리초
 
 			// 전체 프로세스 종료 시간 측정
 			long processEndTime = System.currentTimeMillis();
@@ -125,6 +145,8 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 			totalDownloadTime.addAndGet(downloadTime);
 			totalUploadTime.addAndGet(uploadTime);
 			totalProcessTime.addAndGet(processTime);
+			totalDownloadCpuTime.addAndGet(downloadCpuTime);
+			totalUploadCpuTime.addAndGet(uploadCpuTime);
 			int count = processCount.incrementAndGet();
 
 			// 500개 처리마다 성능 로그 출력
@@ -200,12 +222,19 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 		long avgDownloadTime = totalDownloadTime.get() / count;
 		long avgUploadTime = totalUploadTime.get() / count;
 		long avgProcessTime = totalProcessTime.get() / count;
+		long avgDownloadCpuTime = totalDownloadCpuTime.get() / count;
+		long avgUploadCpuTime = totalUploadCpuTime.get() / count;
+
+		long avgDownloadWaitTime = avgDownloadTime - avgDownloadCpuTime;
+		long avgUploadWaitTime = avgUploadTime - avgUploadCpuTime;
 
 		double downloadRatio = (double) totalDownloadTime.get() / totalProcessTime.get() * 100;
 		double uploadRatio = (double) totalUploadTime.get() / totalProcessTime.get() * 100;
 
-		log.info("성능 측정 {}건 처리 완료 - 평균 다운로드 시간: {}ms, 평균 S3 업로드 시간: {}ms, 평균 전체 처리 시간: {}ms, 다운로드 비율: {}%, S3 업로드 비율: {}%",
-			count, avgDownloadTime, avgUploadTime, avgProcessTime,
-			String.format("%.2f", downloadRatio), String.format("%.2f", uploadRatio));
+		log.info("성능 측정 {}건 처리 완료", count);
+		log.info("- 다운로드: 전체 {}ms (CPU {}ms, 대기 {}ms)", avgDownloadTime, avgDownloadCpuTime, avgDownloadWaitTime);
+		log.info("- S3 업로드: 전체 {}ms (CPU {}ms, 대기 {}ms)", avgUploadTime, avgUploadCpuTime, avgUploadWaitTime);
+		log.info("- 전체 처리 시간: {}ms", avgProcessTime);
+		log.info("- 비율: 다운로드 {}%, S3 업로드 {}%", String.format("%.2f", downloadRatio), String.format("%.2f", uploadRatio));
 	}
 }
