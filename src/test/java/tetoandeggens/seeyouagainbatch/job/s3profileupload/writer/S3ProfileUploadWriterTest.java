@@ -12,23 +12,27 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.item.Chunk;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import tetoandeggens.seeyouagainbatch.domain.Animal;
-import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.dto.ProfileImageData;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.service.ParallelS3UploadService;
 
 @ExtendWith(MockitoExtension.class)
 class S3ProfileUploadWriterTest {
 
 	@Mock
+	private ParallelS3UploadService parallelS3UploadService;
+
+	@Mock
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-	@InjectMocks
 	private S3ProfileUploadWriter writer;
 
 	@Captor
@@ -42,24 +46,27 @@ class S3ProfileUploadWriterTest {
 	@BeforeEach
 	void setUp() {
 		testAnimal = new Animal(1L);
+		writer = new S3ProfileUploadWriter(parallelS3UploadService, namedParameterJdbcTemplate, "https://cdn.example.com/");
 	}
 
 	@Test
-	@DisplayName("여러 개의 S3 프로필을 bulk insert 한다")
-	void shouldBulkInsertMultipleS3Profiles() {
-		List<AnimalS3Profile> profiles = List.of(
-			createS3Profile("s3-key-1", 1L),
-			createS3Profile("s3-key-2", 2L),
-			createS3Profile("s3-key-3", 3L)
+	@DisplayName("S3 업로드 후 모든 항목을 DB에 저장한다")
+	void shouldInsertAllItems() {
+		List<ProfileImageData> imageDataList = List.of(
+			createProfileImageData("s3-key-1", 1L),
+			createProfileImageData("s3-key-2", 2L),
+			createProfileImageData("s3-key-3", 3L)
 		);
 
-		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<ProfileImageData> chunk = new Chunk<>(imageDataList);
 
+		doNothing().when(parallelS3UploadService).uploadBatch(anyList());
 		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
 			.thenReturn(new int[]{1, 1, 1});
 
 		writer.write(chunk);
 
+		verify(parallelS3UploadService, times(1)).uploadBatch(anyList());
 		verify(namedParameterJdbcTemplate, times(1))
 			.batchUpdate(sqlCaptor.capture(), paramsCaptor.capture());
 
@@ -68,74 +75,39 @@ class S3ProfileUploadWriterTest {
 		assertThat(sql).contains("profile");
 		assertThat(sql).contains("image_type");
 		assertThat(sql).contains("animal_id");
-		assertThat(sql).doesNotContain("ON DUPLICATE KEY UPDATE");
 
 		SqlParameterSource[] params = paramsCaptor.getValue();
 		assertThat(params).hasSize(3);
 	}
 
 	@Test
-	@DisplayName("null 항목은 필터링하고 유효한 항목만 insert 한다")
-	void shouldFilterNullItemsAndInsertValidOnes() {
-		List<AnimalS3Profile> profiles = List.of(
-			createS3Profile("s3-key-1", 1L),
-			createS3ProfileWithNullKey(),
-			createS3Profile("s3-key-3", 3L)
-		);
-
-		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
-
-		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
-			.thenReturn(new int[]{1, 1});
-
-		writer.write(chunk);
-
-		verify(namedParameterJdbcTemplate, times(1))
-			.batchUpdate(anyString(), paramsCaptor.capture());
-
-		SqlParameterSource[] params = paramsCaptor.getValue();
-		assertThat(params).hasSize(2);
-	}
-
-	@Test
-	@DisplayName("빈 chunk는 insert를 수행하지 않는다")
-	void shouldNotInsertWhenChunkIsEmpty() {
-		Chunk<AnimalS3Profile> emptyChunk = new Chunk<>();
+	@DisplayName("빈 chunk는 S3 업로드 및 DB 저장을 수행하지 않는다")
+	void shouldNotProcessWhenChunkIsEmpty() {
+		Chunk<ProfileImageData> emptyChunk = new Chunk<>();
 
 		writer.write(emptyChunk);
 
+		verify(parallelS3UploadService, never()).uploadBatch(anyList());
 		verify(namedParameterJdbcTemplate, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
 	}
 
 	@Test
-	@DisplayName("모든 항목이 null인 경우 insert를 수행하지 않는다")
-	void shouldNotInsertWhenAllItemsAreInvalid() {
-		List<AnimalS3Profile> profiles = List.of(
-			createS3ProfileWithNullKey(),
-			createS3ProfileWithNullKey()
+	@DisplayName("null 항목은 필터링하고 유효한 항목만 처리한다")
+	void shouldFilterNullItemsAndProcessValidOnes() {
+		List<ProfileImageData> imageDataList = List.of(
+			createProfileImageData("s3-key-1", 1L),
+			createProfileImageDataWithNullBytes()
 		);
 
-		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
+		Chunk<ProfileImageData> chunk = new Chunk<>(imageDataList);
 
-		writer.write(chunk);
-
-		verify(namedParameterJdbcTemplate, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
-	}
-
-	@Test
-	@DisplayName("단일 항목도 정상적으로 insert 한다")
-	void shouldInsertSingleItem() {
-		List<AnimalS3Profile> profiles = List.of(
-			createS3Profile("s3-key-1", 1L)
-		);
-
-		Chunk<AnimalS3Profile> chunk = new Chunk<>(profiles);
-
+		doNothing().when(parallelS3UploadService).uploadBatch(anyList());
 		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
 			.thenReturn(new int[]{1});
 
 		writer.write(chunk);
 
+		verify(parallelS3UploadService, times(1)).uploadBatch(anyList());
 		verify(namedParameterJdbcTemplate, times(1))
 			.batchUpdate(anyString(), paramsCaptor.capture());
 
@@ -143,19 +115,53 @@ class S3ProfileUploadWriterTest {
 		assertThat(params).hasSize(1);
 	}
 
-	private AnimalS3Profile createS3Profile(String objectKey, Long animalId) {
-		Animal animal = new Animal(animalId);
+	@Test
+	@DisplayName("단일 항목도 정상적으로 처리한다")
+	void shouldProcessSingleItem() {
+		List<ProfileImageData> imageDataList = List.of(
+			createProfileImageData("s3-key-1", 1L)
+		);
 
-		return AnimalS3Profile.builder()
-			.profile(objectKey)
+		Chunk<ProfileImageData> chunk = new Chunk<>(imageDataList);
+
+		doNothing().when(parallelS3UploadService).uploadBatch(anyList());
+		when(namedParameterJdbcTemplate.batchUpdate(anyString(), any(SqlParameterSource[].class)))
+			.thenReturn(new int[]{1});
+
+		writer.write(chunk);
+
+		verify(parallelS3UploadService, times(1)).uploadBatch(anyList());
+		verify(namedParameterJdbcTemplate, times(1))
+			.batchUpdate(anyString(), paramsCaptor.capture());
+
+		SqlParameterSource[] params = paramsCaptor.getValue();
+		assertThat(params).hasSize(1);
+	}
+
+	private ProfileImageData createProfileImageData(String s3Key, Long animalId) {
+		Animal animal = new Animal(animalId);
+		AnimalProfile profile = AnimalProfile.builder()
+			.profile("http://example.com/image.jpg")
 			.animal(animal)
+			.build();
+
+		return ProfileImageData.builder()
+			.profile(profile)
+			.imageBytes(new byte[1024])
+			.s3Key(s3Key)
 			.build();
 	}
 
-	private AnimalS3Profile createS3ProfileWithNullKey() {
-		return AnimalS3Profile.builder()
-			.profile(null)
+	private ProfileImageData createProfileImageDataWithNullBytes() {
+		AnimalProfile profile = AnimalProfile.builder()
+			.profile("http://example.com/image.jpg")
 			.animal(testAnimal)
+			.build();
+
+		return ProfileImageData.builder()
+			.profile(profile)
+			.imageBytes(null)
+			.s3Key("s3-key-null")
 			.build();
 	}
 }

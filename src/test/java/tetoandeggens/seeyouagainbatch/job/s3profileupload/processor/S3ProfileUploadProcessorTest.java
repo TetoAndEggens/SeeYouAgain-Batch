@@ -15,20 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import tetoandeggens.seeyouagainbatch.domain.Animal;
 import tetoandeggens.seeyouagainbatch.domain.AnimalProfile;
-import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.dto.ProfileImageData;
 
 @ExtendWith(MockitoExtension.class)
 class S3ProfileUploadProcessorTest {
-
-	@Mock
-	private S3Client s3Client;
 
 	@Mock
 	private HttpClient httpClient;
@@ -47,12 +40,12 @@ class S3ProfileUploadProcessorTest {
 			.animal(testAnimal)
 			.build();
 
-		processor = new S3ProfileUploadProcessor(s3Client, httpClient, "test-bucket", "");
+		processor = new S3ProfileUploadProcessor(httpClient);
 	}
 
 	@SuppressWarnings("unchecked")
 	private HttpResponse<InputStream> createSuccessfulHttpResponse() {
-		HttpResponse<InputStream> response = (HttpResponse<InputStream>) mock(HttpResponse.class);
+		HttpResponse<InputStream> response = (HttpResponse<InputStream>)mock(HttpResponse.class);
 
 		when(response.statusCode()).thenReturn(200);
 		when(response.body()).thenAnswer(invocation -> new ByteArrayInputStream(new byte[1024]));
@@ -61,40 +54,39 @@ class S3ProfileUploadProcessorTest {
 	}
 
 	@Test
-	@DisplayName("S3 업로드 성공 시 AnimalS3Profile을 반환한다")
-	void shouldReturnS3ProfileWhenUploadSucceeds() throws Exception {
+	@DisplayName("이미지 다운로드 성공 시 ProfileImageData를 반환한다")
+	void shouldReturnProfileImageDataWhenDownloadSucceeds() throws Exception {
 		HttpResponse<InputStream> response = createSuccessfulHttpResponse();
 		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
-		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
-			.thenReturn(PutObjectResponse.builder().build());
 
-		AnimalS3Profile result = processor.process(testProfile);
+		ProfileImageData result = processor.process(testProfile);
 
 		assertThat(result).isNotNull();
-		assertThat(result.getProfile()).startsWith("animal-profiles/");
-		assertThat(result.getProfile()).endsWith(".webp");
-		assertThat(result.getAnimal()).isEqualTo(testAnimal);
+		assertThat(result.getProfile()).isEqualTo(testProfile);
+		assertThat(result.getImageBytes()).isNotNull();
+		assertThat(result.getImageBytes()).hasSize(1024);
+		assertThat(result.getS3Key()).startsWith("animal-profiles/public-data/");
+		assertThat(result.getS3Key()).endsWith(".webp");
 		verify(httpClient, times(1)).send(any(), any());
-		verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
 	}
 
 	@Test
-	@DisplayName("S3 업로드 실패 시 null을 반환한다")
-	void shouldReturnNullWhenUploadFails() throws Exception {
+	@DisplayName("이미지 다운로드 실패 시 null을 반환한다")
+	void shouldReturnNullWhenDownloadFails() throws Exception {
 		when(httpClient.send(any(), any())).thenThrow(new RuntimeException("HTTP 요청 실패"));
 
-		AnimalS3Profile result = processor.process(testProfile);
+		ProfileImageData result = processor.process(testProfile);
 
 		assertThat(result).isNull();
 		verify(httpClient, times(1)).send(any(), any());
 	}
 
 	@Test
-	@DisplayName("S3 업로드 중 예외 발생 시 null을 반환한다")
+	@DisplayName("다운로드 중 예외 발생 시 null을 반환한다")
 	void shouldReturnNullWhenExceptionOccurs() throws Exception {
-		when(httpClient.send(any(), any())).thenThrow(new RuntimeException("S3 업로드 실패"));
+		when(httpClient.send(any(), any())).thenThrow(new RuntimeException("다운로드 실패"));
 
-		AnimalS3Profile result = processor.process(testProfile);
+		ProfileImageData result = processor.process(testProfile);
 
 		assertThat(result).isNull();
 		verify(httpClient, times(1)).send(any(), any());
@@ -105,8 +97,6 @@ class S3ProfileUploadProcessorTest {
 	void shouldProcessMultipleProfiles() throws Exception {
 		HttpResponse<InputStream> response = createSuccessfulHttpResponse();
 		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
-		when(s3Client.putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
-			.thenReturn(PutObjectResponse.builder().build());
 
 		AnimalProfile profile1 = AnimalProfile.builder()
 			.profile("http://example.com/profile1.jpg")
@@ -118,14 +108,57 @@ class S3ProfileUploadProcessorTest {
 			.animal(testAnimal)
 			.build();
 
-		AnimalS3Profile result1 = processor.process(profile1);
-		AnimalS3Profile result2 = processor.process(profile2);
+		ProfileImageData result1 = processor.process(profile1);
+		ProfileImageData result2 = processor.process(profile2);
 
 		assertThat(result1).isNotNull();
-		assertThat(result1.getProfile()).startsWith("animal-profiles/");
+		assertThat(result1.getS3Key()).startsWith("animal-profiles/public-data/");
+		assertThat(result1.getImageBytes()).hasSize(1024);
 		assertThat(result2).isNotNull();
-		assertThat(result2.getProfile()).startsWith("animal-profiles/");
+		assertThat(result2.getS3Key()).startsWith("animal-profiles/public-data/");
+		assertThat(result2.getImageBytes()).hasSize(1024);
 		verify(httpClient, times(2)).send(any(), any());
-		verify(s3Client, times(2)).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
+	}
+
+	@Test
+	@DisplayName("profile URL이 null이면 null을 반환한다")
+	void shouldReturnNullWhenProfileUrlIsNull() throws Exception {
+		AnimalProfile profileWithNullUrl = AnimalProfile.builder()
+			.profile(null)
+			.animal(testAnimal)
+			.build();
+
+		ProfileImageData result = processor.process(profileWithNullUrl);
+
+		assertThat(result).isNull();
+		verify(httpClient, never()).send(any(), any());
+	}
+
+	@Test
+	@DisplayName("profile URL이 빈 문자열이면 null을 반환한다")
+	void shouldReturnNullWhenProfileUrlIsBlank() throws Exception {
+		AnimalProfile profileWithBlankUrl = AnimalProfile.builder()
+			.profile("   ")
+			.animal(testAnimal)
+			.build();
+
+		ProfileImageData result = processor.process(profileWithBlankUrl);
+
+		assertThat(result).isNull();
+		verify(httpClient, never()).send(any(), any());
+	}
+
+	@Test
+	@DisplayName("다운로드한 이미지가 비어있으면 null을 반환한다")
+	void shouldReturnNullWhenDownloadedImageIsEmpty() throws Exception {
+		HttpResponse<InputStream> response = (HttpResponse<InputStream>)mock(HttpResponse.class);
+		when(response.statusCode()).thenReturn(200);
+		when(response.body()).thenAnswer(invocation -> new ByteArrayInputStream(new byte[0]));
+		when(httpClient.send(any(), any())).thenAnswer(invocation -> response);
+
+		ProfileImageData result = processor.process(testProfile);
+
+		assertThat(result).isNull();
+		verify(httpClient, times(1)).send(any(), any());
 	}
 }
