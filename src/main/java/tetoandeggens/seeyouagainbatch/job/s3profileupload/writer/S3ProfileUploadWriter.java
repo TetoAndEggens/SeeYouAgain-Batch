@@ -1,11 +1,11 @@
 package tetoandeggens.seeyouagainbatch.job.s3profileupload.writer;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -14,31 +14,50 @@ import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 import tetoandeggens.seeyouagainbatch.constant.AnimalS3ProfileEntityField;
 import tetoandeggens.seeyouagainbatch.domain.AnimalS3Profile;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.dto.ProfileImageData;
+import tetoandeggens.seeyouagainbatch.job.s3profileupload.service.ParallelS3UploadService;
 
 @Slf4j
 @Component
-public class S3ProfileUploadWriter implements ItemWriter<AnimalS3Profile> {
+public class S3ProfileUploadWriter implements ItemWriter<ProfileImageData> {
 
+	private final ParallelS3UploadService parallelS3UploadService;
 	private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+	private final String cloudfrontDomain;
 
-	public S3ProfileUploadWriter(@Qualifier("businessNamedParameterJdbcTemplate") NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+	public S3ProfileUploadWriter(
+		ParallelS3UploadService parallelS3UploadService,
+		@Qualifier("businessNamedParameterJdbcTemplate") NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+		@Value("${cloudfront.domain}") String cloudfrontDomain
+	) {
+		this.parallelS3UploadService = parallelS3UploadService;
 		this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
+		this.cloudfrontDomain = cloudfrontDomain;
 	}
 
 	@Override
-	public void write(Chunk<? extends AnimalS3Profile> chunk) {
-		List<? extends AnimalS3Profile> validItems = chunk.getItems().stream()
-			.filter(item -> item != null && item.getProfile() != null)
-			.collect(Collectors.toList());
+	public void write(Chunk<? extends ProfileImageData> chunk) {
+		List<? extends ProfileImageData> items = chunk.getItems().stream()
+			.filter(item -> item != null && item.getImageBytes() != null)
+			.toList();
 
-		if (validItems.isEmpty()) {
+		if (items.isEmpty()) {
 			return;
 		}
 
-		bulkInsertS3Profiles(validItems);
+		parallelS3UploadService.uploadBatch(items);
+
+		List<AnimalS3Profile> s3Profiles = items.stream()
+			.map(imageData -> AnimalS3Profile.builder()
+				.profile(cloudfrontDomain + imageData.getS3Key())
+				.animal(imageData.getProfile().getAnimal())
+				.build())
+			.toList();
+
+		bulkInsertS3Profiles(s3Profiles);
 	}
 
-	private void bulkInsertS3Profiles(List<? extends AnimalS3Profile> profiles) {
+	private void bulkInsertS3Profiles(List<AnimalS3Profile> profiles) {
 		String insertSql = "INSERT INTO animal_s3_profile (profile, image_type, animal_id, is_deleted, created_at, updated_at) " +
 			"VALUES (:profile, :image_type, :animal_id, false, NOW(), NOW())";
 
