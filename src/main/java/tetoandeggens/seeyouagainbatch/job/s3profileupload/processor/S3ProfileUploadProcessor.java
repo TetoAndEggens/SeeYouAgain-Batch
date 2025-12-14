@@ -8,12 +8,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -39,11 +40,18 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 	private static final String ENCODED_SPACE = "%20";
 	private static final int HTTP_OK = 200;
 	private static final int HTTP_NOT_FOUND = 404;
+	private static final int LOG_INTERVAL = 500;
 
 	private final S3Client s3Client;
 	private final HttpClient httpClient;
 	private final String bucketName;
 	private final String cloudfrontDomain;
+
+	// 성능 측정용 변수
+	private final AtomicInteger processCount = new AtomicInteger(0);
+	private final AtomicLong totalDownloadTime = new AtomicLong(0);
+	private final AtomicLong totalUploadTime = new AtomicLong(0);
+	private final AtomicLong totalProcessTime = new AtomicLong(0);
 
 	public S3ProfileUploadProcessor(
 		S3Client s3Client,
@@ -89,11 +97,39 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 
 		String s3Key = generateS3Key(profile.getId());
 
-		try {
-			HttpResponse<InputStream> response = downloadImageAsStream(profileUrl);
+		// 전체 프로세스 시작 시간 측정
+		long processStartTime = System.currentTimeMillis();
+		long downloadTime = 0;
+		long uploadTime = 0;
 
+		try {
+			// 다운로드 시작 시간 측정
+			long downloadStartTime = System.currentTimeMillis();
+			HttpResponse<InputStream> response = downloadImageAsStream(profileUrl);
+			long downloadEndTime = System.currentTimeMillis();
+			downloadTime = downloadEndTime - downloadStartTime;
+
+			// S3 업로드 시작 시간 측정
+			long uploadStartTime = System.currentTimeMillis();
 			try (InputStream inputStream = response.body()) {
 				uploadToS3(s3Key, inputStream);
+			}
+			long uploadEndTime = System.currentTimeMillis();
+			uploadTime = uploadEndTime - uploadStartTime;
+
+			// 전체 프로세스 종료 시간 측정
+			long processEndTime = System.currentTimeMillis();
+			long processTime = processEndTime - processStartTime;
+
+			// 성능 통계 업데이트
+			totalDownloadTime.addAndGet(downloadTime);
+			totalUploadTime.addAndGet(uploadTime);
+			totalProcessTime.addAndGet(processTime);
+			int count = processCount.incrementAndGet();
+
+			// 500개 처리마다 성능 로그 출력
+			if (count % LOG_INTERVAL == 0) {
+				logPerformanceMetrics(count);
 			}
 
 			return s3Key;
@@ -158,5 +194,18 @@ public class S3ProfileUploadProcessor implements ItemProcessor<AnimalProfile, An
 			.build();
 
 		s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
+	}
+
+	private void logPerformanceMetrics(int count) {
+		long avgDownloadTime = totalDownloadTime.get() / count;
+		long avgUploadTime = totalUploadTime.get() / count;
+		long avgProcessTime = totalProcessTime.get() / count;
+
+		double downloadRatio = (double) totalDownloadTime.get() / totalProcessTime.get() * 100;
+		double uploadRatio = (double) totalUploadTime.get() / totalProcessTime.get() * 100;
+
+		log.info("성능 측정 {}건 처리 완료 - 평균 다운로드 시간: {}ms, 평균 S3 업로드 시간: {}ms, 평균 전체 처리 시간: {}ms, 다운로드 비율: {}%, S3 업로드 비율: {}%",
+			count, avgDownloadTime, avgUploadTime, avgProcessTime,
+			String.format("%.2f", downloadRatio), String.format("%.2f", uploadRatio));
 	}
 }
