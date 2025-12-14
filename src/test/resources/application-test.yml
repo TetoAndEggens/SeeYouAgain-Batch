@@ -49,6 +49,10 @@ aws:
 cloudfront:
   domain: test/test
 
+batch:
+  s3upload:
+    thread-pool-size: 30
+
 logging:
   level:
     org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: ERROR
