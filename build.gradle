@@ -74,6 +74,9 @@ dependencies {
 
     // Firebase SDK
     implementation 'com.google.firebase:firebase-admin:9.7.0'
+
+    // Prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 dependencyManagement {
