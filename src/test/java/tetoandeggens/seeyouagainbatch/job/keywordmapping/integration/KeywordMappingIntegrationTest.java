@@ -195,6 +195,7 @@ class KeywordMappingIntegrationTest extends BatchTestConfig {
 		jobParameters = new JobParametersBuilder()
 			.addString("date", targetDate)
 			.addLong("timestamp", System.currentTimeMillis())
+			.addLong("mappingChunkSize", 100L)
 			.toJobParameters();
 	}
 
