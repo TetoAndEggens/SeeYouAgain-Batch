@@ -4,10 +4,12 @@ import java.util.List;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -35,21 +37,23 @@ public class KeywordMappingJobConfig {
 	private final KeywordMappingJobParametersValidator keywordMappingJobParametersValidator;
 	private final KeywordMappingProcessor keywordMappingProcessor;
 
-	private static final int CHUNK_SIZE = 500;
-
 	@Bean
-	public Job keywordMappingJob() {
+	public Job keywordMappingJob(Step keywordMappingStep) {
 		return new JobBuilder("keywordMappingJob", jobRepository)
 			.validator(keywordMappingJobParametersValidator)
-			.start(keywordMappingStep())
+			.start(keywordMappingStep)
 			.build();
 	}
 
 	@Bean
-	public Step keywordMappingStep() {
+	@JobScope
+	public Step keywordMappingStep(
+		@Value("#{jobParameters['mappingChunkSize'] ?: 500L}") Long mappingChunkSize,
+		QuerydslPagingItemReader<KeywordCombinationDto> keywordCombinationReader
+	) {
 		return new StepBuilder("keywordMappingStep", jobRepository)
-			.<KeywordCombinationDto, List<AnimalByKeyword>>chunk(CHUNK_SIZE, businessTransactionManager)
-			.reader(keywordCombinationReader())
+			.<KeywordCombinationDto, List<AnimalByKeyword>>chunk(mappingChunkSize.intValue(), businessTransactionManager)
+			.reader(keywordCombinationReader)
 			.processor(keywordMappingProcessor)
 			.writer(keywordMappingWriter)
 			.build();
@@ -57,12 +61,13 @@ public class KeywordMappingJobConfig {
 
 	@Bean
 	@StepScope
-	public QuerydslPagingItemReader<KeywordCombinationDto> keywordCombinationReader() {
+	public QuerydslPagingItemReader<KeywordCombinationDto> keywordCombinationReader(
+		@Value("#{jobParameters['mappingChunkSize'] ?: 500L}") Long mappingChunkSize) {
 		QNotificationKeyword nk = QNotificationKeyword.notificationKeyword;
 
 		return new QuerydslPagingItemReader<>(
 			entityManagerFactory,
-			CHUNK_SIZE,
+			mappingChunkSize.intValue(),
 			queryFactory -> queryFactory
 				.select(Projections.constructor(KeywordCombinationDto.class,
 					nk.id.min(),

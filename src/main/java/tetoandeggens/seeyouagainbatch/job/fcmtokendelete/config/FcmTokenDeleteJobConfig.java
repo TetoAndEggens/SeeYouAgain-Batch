@@ -6,10 +6,12 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -37,29 +39,33 @@ public class FcmTokenDeleteJobConfig {
 	private final FcmTokenDeleteJobParametersValidator fcmTokenDeleteJobParametersValidator;
 	private final FcmTokenDeleteJobParameter fcmTokenDeleteJobParameter;
 
-	private static final int CHUNK_SIZE = 500;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
 	@Bean
-	public Job fcmTokenDeleteJob() {
+	public Job fcmTokenDeleteJob(Step fcmTokenDeleteStep) {
 		return new JobBuilder("fcmTokenDeleteJob", jobRepository)
 			.validator(fcmTokenDeleteJobParametersValidator)
-			.start(fcmTokenDeleteStep())
+			.start(fcmTokenDeleteStep)
 			.build();
 	}
 
 	@Bean
-	public Step fcmTokenDeleteStep() {
+	@JobScope
+	public Step fcmTokenDeleteStep(
+		@Value("#{jobParameters['tokenDeleteChunkSize'] ?: 500L}") Long tokenDeleteChunkSize,
+		QuerydslNoOffsetPagingItemReader<FcmToken> fcmTokenReader
+	) {
 		return new StepBuilder("fcmTokenDeleteStep", jobRepository)
-			.<FcmToken, FcmToken>chunk(CHUNK_SIZE, businessTransactionManager)
-			.reader(fcmTokenReader())
+			.<FcmToken, FcmToken>chunk(tokenDeleteChunkSize.intValue(), businessTransactionManager)
+			.reader(fcmTokenReader)
 			.writer(fcmTokenDeleteWriter)
 			.build();
 	}
 
 	@Bean
 	@StepScope
-	public QuerydslNoOffsetPagingItemReader<FcmToken> fcmTokenReader() {
+	public QuerydslNoOffsetPagingItemReader<FcmToken> fcmTokenReader(
+		@Value("#{jobParameters['tokenDeleteChunkSize'] ?: 500L}") Long tokenDeleteChunkSize) {
 		QFcmToken fcmToken = QFcmToken.fcmToken;
 
 		LocalDate date = LocalDate.parse(fcmTokenDeleteJobParameter.getDate(), DATE_FORMATTER);
@@ -70,7 +76,7 @@ public class FcmTokenDeleteJobConfig {
 
 		return QuerydslNoOffsetPagingItemReaderBuilder.<FcmToken>builder()
 			.entityManagerFactory(entityManagerFactory)
-			.pageSize(CHUNK_SIZE)
+			.pageSize(tokenDeleteChunkSize.intValue())
 			.options(options)
 			.queryFunction(queryFactory -> queryFactory
 				.selectFrom(fcmToken)

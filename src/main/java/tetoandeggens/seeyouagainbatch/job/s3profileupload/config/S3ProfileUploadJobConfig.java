@@ -5,12 +5,15 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import jakarta.persistence.EntityManagerFactory;
@@ -38,31 +41,37 @@ public class S3ProfileUploadJobConfig {
 	private final S3ProfileUploadWriter s3ProfileUploadWriter;
 	private final S3ProfileUploadJobParametersValidator jobParametersValidator;
 	private final S3ProfileUploadJobParameter jobParameter;
+	private final TaskExecutor s3UploadTaskExecutor;
 
-	private static final int CHUNK_SIZE = 500;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
 	@Bean
-	public Job s3ProfileUploadJob() {
+	public Job s3ProfileUploadJob(Step s3ProfileUploadStep) {
 		return new JobBuilder("s3ProfileUploadJob", jobRepository)
-			.start(s3ProfileUploadStep())
+			.start(s3ProfileUploadStep)
 			.validator(jobParametersValidator)
 			.build();
 	}
 
 	@Bean
-	public Step s3ProfileUploadStep() {
+	@JobScope
+	public Step s3ProfileUploadStep(
+		@Value("#{jobParameters['uploadChunkSize'] ?: 500L}") Long uploadChunkSize,
+		QuerydslNoOffsetPagingItemReader<AnimalProfile> animalProfileReader
+	) {
 		return new StepBuilder("s3ProfileUploadStep", jobRepository)
-			.<AnimalProfile, ProfileImageData>chunk(CHUNK_SIZE, businessTransactionManager)
-			.reader(animalProfileReader())
+			.<AnimalProfile, ProfileImageData>chunk(uploadChunkSize.intValue(), businessTransactionManager)
+			.reader(animalProfileReader)
 			.processor(s3ProfileUploadProcessor)
 			.writer(s3ProfileUploadWriter)
+			.taskExecutor(s3UploadTaskExecutor)
 			.build();
 	}
 
 	@Bean
 	@StepScope
-	public QuerydslNoOffsetPagingItemReader<AnimalProfile> animalProfileReader() {
+	public QuerydslNoOffsetPagingItemReader<AnimalProfile> animalProfileReader(
+		@Value("#{jobParameters['uploadChunkSize'] ?: 500L}") Long uploadChunkSize) {
 		QAnimalProfile profile = QAnimalProfile.animalProfile;
 
 		LocalDate startDate = LocalDate.parse(jobParameter.getStartDate(), DATE_FORMATTER);
@@ -73,7 +82,7 @@ public class S3ProfileUploadJobConfig {
 
 		return QuerydslNoOffsetPagingItemReaderBuilder.<AnimalProfile>builder()
 			.entityManagerFactory(entityManagerFactory)
-			.pageSize(CHUNK_SIZE)
+			.pageSize(uploadChunkSize.intValue())
 			.options(options)
 			.queryFunction(queryFactory -> queryFactory
 				.selectFrom(profile)

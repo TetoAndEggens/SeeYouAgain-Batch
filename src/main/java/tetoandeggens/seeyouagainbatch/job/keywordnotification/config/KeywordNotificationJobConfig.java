@@ -6,10 +6,12 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -37,29 +39,33 @@ public class KeywordNotificationJobConfig {
 	private final KeywordNotificationJobParametersValidator keywordNotificationJobParametersValidator;
 	private final KeywordNotificationJobParameter keywordNotificationJobParameter;
 
-	private static final int CHUNK_SIZE = 100;
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
 	@Bean
-	public Job keywordNotificationJob() {
+	public Job keywordNotificationJob(Step keywordNotificationStep) {
 		return new JobBuilder("keywordNotificationJob", jobRepository)
 			.validator(keywordNotificationJobParametersValidator)
-			.start(keywordNotificationStep())
+			.start(keywordNotificationStep)
 			.build();
 	}
 
 	@Bean
-	public Step keywordNotificationStep() {
+	@JobScope
+	public Step keywordNotificationStep(
+		@Value("#{jobParameters['notificationChunkSize'] ?: 500L}") Long notificationChunkSize,
+		QuerydslPagingItemReader<KeywordNotificationDto> keywordNotificationReader
+	) {
 		return new StepBuilder("keywordNotificationStep", jobRepository)
-			.<KeywordNotificationDto, KeywordNotificationDto>chunk(CHUNK_SIZE, businessTransactionManager)
-			.reader(keywordNotificationReader())
+			.<KeywordNotificationDto, KeywordNotificationDto>chunk(notificationChunkSize.intValue(), businessTransactionManager)
+			.reader(keywordNotificationReader)
 			.writer(keywordNotificationWriter)
 			.build();
 	}
 
 	@Bean
 	@StepScope
-	public QuerydslPagingItemReader<KeywordNotificationDto> keywordNotificationReader() {
+	public QuerydslPagingItemReader<KeywordNotificationDto> keywordNotificationReader(
+		@Value("#{jobParameters['notificationChunkSize'] ?: 500L}") Long notificationChunkSize) {
 		QAnimalByKeyword abk = QAnimalByKeyword.animalByKeyword;
 		QNotificationKeyword nk = QNotificationKeyword.notificationKeyword;
 
@@ -69,7 +75,7 @@ public class KeywordNotificationJobConfig {
 
 		return new QuerydslPagingItemReader<>(
 			entityManagerFactory,
-			CHUNK_SIZE,
+			notificationChunkSize.intValue(),
 			queryFactory -> queryFactory
 				.select(Projections.constructor(KeywordNotificationDto.class,
 					abk.notificationKeyword.id,
