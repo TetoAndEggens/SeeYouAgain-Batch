@@ -141,7 +141,6 @@ class FcmTokenDeleteIntegrationTest extends BatchTestConfig {
 
 		jobParameters = new JobParametersBuilder()
 			.addString("date", targetDate)
-			.addLong("tokenDeleteChunkSize", 500L)
 			.addLong("timestamp", System.currentTimeMillis())
 			.toJobParameters();
 	}

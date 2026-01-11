@@ -251,7 +251,6 @@ class KeywordNotificationIntegrationTest extends BatchTestConfig {
 		jobParameters = new JobParametersBuilder()
 			.addString("date", targetDate)
 			.addLong("timestamp", System.currentTimeMillis())
-			.addLong("notificationChunkSize", 100L)
 			.toJobParameters();
 	}
 

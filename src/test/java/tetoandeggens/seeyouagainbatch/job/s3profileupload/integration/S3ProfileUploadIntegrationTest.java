@@ -84,7 +84,6 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 		JobParameters dateRangeParameters = jobLauncherTestUtils.getUniqueJobParametersBuilder()
 			.addString("startDate", "20250101")
 			.addString("endDate", "20250101")
-			.addLong("uploadChunkSize", 500L)
 			.toJobParameters();
 
 		JobExecution jobExecution = jobLauncherTestUtils.launchJob(dateRangeParameters);
@@ -180,7 +179,6 @@ class S3ProfileUploadIntegrationTest extends BatchTestConfig {
 		jobParameters = jobLauncherTestUtils.getUniqueJobParametersBuilder()
 			.addString("startDate", "20250101")
 			.addString("endDate", "20250103")
-			.addLong("uploadChunkSize", 500L)
 			.toJobParameters();
 	}
 

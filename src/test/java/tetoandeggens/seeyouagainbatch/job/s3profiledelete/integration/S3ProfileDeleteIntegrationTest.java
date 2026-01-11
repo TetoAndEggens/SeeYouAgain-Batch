@@ -167,9 +167,6 @@ class S3ProfileDeleteIntegrationTest extends BatchTestConfig {
 
 	private void setupJobParameters() {
 		jobParameters = jobLauncherTestUtils.getUniqueJobParametersBuilder()
-			.addString("startDate", "20250101")
-			.addString("endDate", "20250131")
-			.addLong("deleteChunkSize", 100L)
 			.toJobParameters();
 	}
 
