@@ -38,6 +38,14 @@ jobs:
           echo "========================================="
           echo "🚀 Deploying JAR to Dev Jenkins Container"
           echo "========================================="
+          
+          # Secret 값 디버깅 (base64로 인코딩)
+          echo "DEV_BATCH_SSH_COMMAND (base64):"
+          echo "${{ secrets.DEV_BATCH_SSH_COMMAND }}" | base64
+          echo ""
+          echo "DEV_EC2_TEMP_PATH (base64):"
+          echo "${{ secrets.DEV_EC2_TEMP_PATH }}" | base64
+          echo ""
 
           JAR_FILE=$(ls build/libs/*.jar | head -n 1)
           echo "Deploying: $(basename $JAR_FILE)"
