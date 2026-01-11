@@ -15,9 +15,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.persistence.EntityManagerFactory;
-import lombok.RequiredArgsConstructor;
 import tetoandeggens.seeyouagainbatch.common.reader.QuerydslNoOffsetPagingItemReader;
 import tetoandeggens.seeyouagainbatch.common.reader.QuerydslNoOffsetPagingItemReaderBuilder;
 import tetoandeggens.seeyouagainbatch.common.reader.expression.Expression;
@@ -31,7 +31,6 @@ import tetoandeggens.seeyouagainbatch.job.s3profileupload.validator.S3ProfileUpl
 import tetoandeggens.seeyouagainbatch.job.s3profileupload.writer.S3ProfileUploadWriter;
 
 @Configuration
-@RequiredArgsConstructor
 public class S3ProfileUploadJobConfig {
 
 	private final JobRepository jobRepository;
@@ -42,6 +41,26 @@ public class S3ProfileUploadJobConfig {
 	private final S3ProfileUploadJobParametersValidator jobParametersValidator;
 	private final S3ProfileUploadJobParameter jobParameter;
 	private final TaskExecutor s3UploadTaskExecutor;
+
+	public S3ProfileUploadJobConfig(
+		JobRepository jobRepository,
+		PlatformTransactionManager businessTransactionManager,
+		EntityManagerFactory entityManagerFactory,
+		S3ProfileUploadProcessor s3ProfileUploadProcessor,
+		S3ProfileUploadWriter s3ProfileUploadWriter,
+		S3ProfileUploadJobParametersValidator jobParametersValidator,
+		S3ProfileUploadJobParameter jobParameter,
+		@Autowired(required = false) TaskExecutor s3UploadTaskExecutor
+	) {
+		this.jobRepository = jobRepository;
+		this.businessTransactionManager = businessTransactionManager;
+		this.entityManagerFactory = entityManagerFactory;
+		this.s3ProfileUploadProcessor = s3ProfileUploadProcessor;
+		this.s3ProfileUploadWriter = s3ProfileUploadWriter;
+		this.jobParametersValidator = jobParametersValidator;
+		this.jobParameter = jobParameter;
+		this.s3UploadTaskExecutor = s3UploadTaskExecutor;
+	}
 
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -59,13 +78,17 @@ public class S3ProfileUploadJobConfig {
 		@Value("#{jobParameters['uploadChunkSize'] ?: 500L}") Long uploadChunkSize,
 		QuerydslNoOffsetPagingItemReader<AnimalProfile> animalProfileReader
 	) {
-		return new StepBuilder("s3ProfileUploadStep", jobRepository)
+		var stepBuilder = new StepBuilder("s3ProfileUploadStep", jobRepository)
 			.<AnimalProfile, ProfileImageData>chunk(uploadChunkSize.intValue(), businessTransactionManager)
 			.reader(animalProfileReader)
 			.processor(s3ProfileUploadProcessor)
-			.writer(s3ProfileUploadWriter)
-			.taskExecutor(s3UploadTaskExecutor)
-			.build();
+			.writer(s3ProfileUploadWriter);
+
+		if (s3UploadTaskExecutor != null) {
+			stepBuilder.taskExecutor(s3UploadTaskExecutor);
+		}
+
+		return stepBuilder.build();
 	}
 
 	@Bean
